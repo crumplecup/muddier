@@ -1,0 +1,22 @@
+Package: muddier
+Type: Package
+Title: Analystic Tools for Debris Flow Deposits in Montate Headwaters
+Version: 0.0.0.9000
+Authors@R: person("Erik", "Rose", email = "erik.w.rose@gmail.com",
+  role = c("aut", "cre"))
+Maintainer: Erik Rose <erik.w.rose@gmail.com>
+Description: Functions for convolving inherited ages from C14 bank stratigraphy samples.  Transect tools and spatial functions for fitting Miller-Burnett model output to field survey landmarks.
+Depends: R (>= 3.4.4)
+Imports:
+    data.table,
+    magrittr,
+    parallel,
+    staTools
+Encoding: UTF-8
+License: CC0
+LazyData: true
+RoxygenNote: 6.1.1
+Suggests: 
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr

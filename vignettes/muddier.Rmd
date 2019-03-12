@@ -1,0 +1,187 @@
+---
+title: 'muddier'
+author: 'Erik Rose'
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{muddier}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+## Horse Trading
+
+Let's play a game called Horse Trading, where you are the prospective buyer of a racehorse.  It is your desire to buy the horse that will win the most amount of races on average.
+
+Each horse has two attributes, strength and heart.  Strength represents the stamina and health of the animal, and heart represent their fighting spirit.  Strength does not vary much from race to race, and will always be a sequence of two consecutive numbers.  Heart is more variable, and draws from a normal distribution with mean zero.  The numeric value of the heart attribute determines the standard deviation of the distribution.  To determine the winner of a race, choose either number from the strength couplet with equal likelihood, and take a random draw from the heart distribution.  Add the two numbers together and this is the total effort applied by the horse.  The horse to exert the most effort wins the race!
+
+## First Purchase
+
+Now you must choose between two prospective racehorses for your stable.  Which is the finer steed?  The first is Arnold, a burly reliable horse.  Arnold has a strength of 10-11.  When it comes to fiery spirit, Arnold exhibits a lackluster work ethic, with a heart of mean 0 and sd 1.
+
+
+```{r, fig.show='hold'}
+set.seed(777)
+n <- 10000                               # number of bootstraps
+y <- 1:15
+arnold_str <- vector(length=15, mode='numeric')
+# where y values are 10:11, change str prob to 50%
+arnold_str[10:11] <- .5
+arnold_hrt <- rnorm(1000,0,1)
+plot(y,arnold_str, main='Arnold Strength', type='l')
+plot(density(arnold_hrt), main='Arnold Heart')
+```
+    
+
+The second horse is named Rudy.  Rudy is small and slow, and other racehorses laugh at him and tease him.  His strength has a range of 1-2.  But Rudy has the heart of a true warrior, with a sd of 100.
+
+```{r, fig.show='hold'}
+set.seed(777)
+n <- 10000                               # number of bootstraps
+y <- 1:10
+rudy_str <- vector(length=10, mode='numeric')
+# where y values are 1-2, change str prob to 50%
+rudy_str[1:2] <- .5
+rudy_hrt <- rnorm(n,0,100)
+plot(y,rudy_str, main='Rudy Strength', type='l')
+plot(density(rudy_hrt), main='Rudy Heart')
+```
+
+
+## Horseshoe-strapping
+
+One method to determine which horse is more likely to win a race is bootstrapping, in this case using horseshoes.
+
+```{r}
+n <- 10000                               # number of bootstraps
+
+ar_str <- sample(10:11,n,rep=T)          # arnold strength values
+ar_hrt <- rnorm(n,0,1)                   # arnold heart values
+ar_res <- ar_str + ar_hrt                # arnold resulting race effort
+
+rd_str <- sample(1:2,n,rep=T)            # rudy strength values
+rd_hrt <- rnorm(n,0,100)                 # rudy heart values
+rd_res <- rd_str + rd_hrt                # rudy resulting race effort
+
+ar_wins <- ar_res - rd_res               # arnold effort minus rudy effort
+for (i in seq_along(ar_wins))  {         
+  if (ar_wins[i] > 0)  {
+    ar_wins[i] <- 1                      # if positive arnold wins
+  } else {
+    ar_wins[i] <- 0                      # if negative rudy wins
+  }
+}
+ar_wins <- sum(ar_wins) / n * 100        # convert to %
+
+print(paste0('Arnold wins ',ar_wins,'% of the time.'))
+print(paste0('Rudy wins ',100-ar_wins,'% of the time.'))
+
+```
+
+As you can see, the strength of Arnold prevails over the fiery heart of Rudy, and the wise horse trader would purchase Arnold.  The clever math student reading has already come to the conclusion that the higher strength will always win, because the mean for all heart attributes is zero.  The long term average will center on zero regardless of how high the horse's heart sd value.  But this is just a game!  Now let's see how the `muddier` package can help you to do the same thing, but in a more complicated way.
+
+## Deriving PDFs using `muddier`
+
+The `muddier` package derives a PDF from two other PDFs using convolution.  Since R is vectorized, we represent a PDF as a discretized PMF.  To calculate the PMF for a given variable, `muddier` first calculates the CDF of the variable, then derives the PMF from the CDF using the function `fit_pdf()`.
+
+The function `fit_pdf()` takes two arguments.  The first agrument `vals` is the sorted numeric vector of variable values.  The values need to be sorted in ascending order for the function to derive the CDF properly, and it will not warn you if the output is nonsense, so sort your numeric vectors.
+
+The second argument `index` is the range of values along which to derive the PMF.  The `index` will make more sense seen in action.  Let's convert Arnold's and Rudy's attributes into PMFs using `fit_pdf()`:
+
+```{r, fig.show='hold'}
+library(muddier)
+n <- 10000                                              # number of bootstraps
+y <- -399:400                                           # index range 
+
+arn_str <- fit_pdf(sort(10:11),y)                       # arnold strength pmf
+arn_hrt <- fit_pdf(sort(rnorm(n,0,1)),y)                # arnold heart pmf
+
+rud_str <- fit_pdf(sort(1:2),y)                         # rudy strength pmf
+rud_hrt <- fit_pdf(sort(rnorm(n,0,100)),y)              # rudy heart pmf
+
+plot(y,arn_str, main='Arnold Strength PMF', xlim=c(0,15))
+plot(y,arn_hrt, main='Arnold Heart PMF', xlim=c(-5,5))
+plot(y,rud_str, main='Rudy Strength PMF', xlim=c(0,15))
+plot(y,rud_hrt, main='Rudy Heart PMF', xlim=c(-399,400))
+
+```
+
+`fit_pdf()` derives the PMF of the variable by discretizing the CDF into segments along the range of the `index`.  In this case the `index` was a sequence of integers from -399 to 400.  
+
+For an index value of `x`, `fit_pdf()` calculates the cumulative probability the variable `vals` is equal to or greater than `x` and not greater than `x+1`.  If you want more detail about the distribution along narrow range increments, increase the number of increments in the `index` within the desired range:
+
+```{r, fig.show='hold'}
+y2 <- seq(-399,400,.01)
+arn_hrt2 <- fit_pdf(sort(rnorm(n,0,1)),y2)
+plot(y2,arn_hrt2, main='Arnold Heart PMF', xlim=c(-5,5))
+
+```
+
+## Convolution using `convo_add()`
+
+If you have two distributions, `x` and `y`, then let `w` be the sum of the two:
+
+    w = x + y
+
+`muddier` uses the `convo_add()` function to derive the PMF of `w` given the PMFs of `x` and `y`, along the range of `index`.
+
+Now imagine that `x` and `y` stand for strength and heart, then `w` represents total race effort.  We can use `convo_add()` to derive the PMF of race effort given the variables for strength and agility for a given horse.
+
+Rudy's performance distribution is spread out compared to Arnold.  By using different `index` ranges for each horse, we can provide more or less smoothing to the shape of the curve on the plot of the resulting PMF.  
+
+One cautionary note is that the `index` range must include the range of all possible input and outcome values of the convolution of `x` and `y`.  In the case of Arnold, the `index` must start below -4 because the empiric distribution of Arnold's heart attribute we generated in the code includes a value of almost -4 in the tail, even though all the values resulting from the convolution are greater than 6.
+
+```{r, fig.show='hold'}
+library(muddier)
+n <- 10000                                      # number of bootstraps
+ya <- seq(-5,20,.05)                              # index for arnold
+yr <- seq(-399,400,1)                           # index for rudy
+
+arn_str <- fit_pdf(sort(10:11),ya)               # arnold strength pmf
+arn_hrt <- fit_pdf(sort(rnorm(n,0,1)),ya)        # arnold heart pmf
+
+rud_str <- fit_pdf(sort(1:2),yr)                 # rudy strength pmf
+rud_hrt <- fit_pdf(sort(rnorm(n,0,100)),yr)      # rudy heart pmf
+
+arn_eff <- convo_add(arn_str,arn_hrt,ya)         # arnold effort derived pmf
+rud_eff <- convo_add(rud_str,rud_hrt,yr)         # rudy effort derived pmf
+
+plot(ya,arn_eff, main='Arnold Race Effort PMF', xlim = c(5,15))
+plot(yr,rud_eff, main='Rudy Race Effort PMF')
+
+```
+
+
+## Mean Race Effort
+
+We can examine the mean performance effort of a horse using the `weighted.mean` function from the `stats` package.
+
+```{r}
+print(paste0("Arnold's mean race effort is ", weighted.mean(ya, arn_eff)))
+print(paste0("Rudy's mean race effort is ", weighted.mean(yr, rud_eff)))
+```
+
+As expected, Arnold's mean race effort is approximately equal to his mean strength of 10.5, as well as Rudy at 1.5.  Rudy's sample mean has a greater variance from the true mean because of the broader spread of the distribution compared to Arnold.
+
+
+## Bootstrapping Mean Race Effort
+
+
+
+
+
+
+
+
+
+
+
