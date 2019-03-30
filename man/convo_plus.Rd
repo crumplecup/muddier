@@ -2,7 +2,7 @@
 % Please edit documentation in R/inher.R
 \name{convo_plus}
 \alias{convo_plus}
-\title{convo_plus convolves two pdfs by adding their values.}
+\title{convo_plus convolves two pmfs by adding their values.}
 \usage{
 convo_plus(x, y)
 }
@@ -13,7 +13,7 @@ convo_plus(x, y)
 the set of prob:value pairs in a matrix with cols prob, value ordered by value.
 }
 \description{
-Given two pdfs and a value vector, returns convolved pdf and value vector in matrix.
+Given two pmfs and a value vector, returns convolved pmf and value vector in matrix.
 Values at associated with probs along (x) are added to values associated with probs along (y)
 throughout a discretized x,y event space.  Returns the set of prob:value pairs in a matrix
 with cols prob, value ordered by value.

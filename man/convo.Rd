@@ -7,9 +7,9 @@
 convo(x, y, index)
 }
 \arguments{
-\item{x}{is a numeric vector (younger pdf)}
+\item{x}{is a numeric vector (younger pmf)}
 
-\item{y}{is a numeric vector (older pdf)}
+\item{y}{is a numeric vector (older pmf)}
 
 \item{index}{is a numeric vector (years)}
 }
@@ -17,7 +17,7 @@ convo(x, y, index)
 a length(index) numeric vector of the convolved distribution of y-x
 }
 \description{
-Given two pdfs and an age vector, returns the derived pdf of the convolution y-x.
+Given two pmfs and an age vector, returns the derived pmf of the convolution y-x.
 Lengths of x,y and index must be equal.
 }
 \seealso{

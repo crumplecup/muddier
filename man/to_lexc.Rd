@@ -2,18 +2,18 @@
 % Please edit documentation in R/inher.R
 \name{to_lexc}
 \alias{to_lexc}
-\title{to_exceed converts numeric pdf vectors to log10 exceedance distributions of equal length}
+\title{to_exceed converts numeric pmf vectors to log10 exceedance distributions of equal length}
 \usage{
 to_lexc(vec)
 }
 \arguments{
-\item{vec}{is a numeric pdf}
+\item{vec}{is a numeric pmf}
 }
 \value{
 a numeric vector of the log10 exceedance distribution
 }
 \description{
-Given a numeric pdf, returns a numeric vector of the log10 exceedance distribution
+Given a numeric pmf, returns a numeric vector of the log10 exceedance distribution
 }
 \seealso{
 to_cdf

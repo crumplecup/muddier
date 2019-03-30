@@ -4,7 +4,7 @@
 \alias{get_cis}
 \title{get_cis returns confidence intervals of a vector}
 \usage{
-get_cis(x, lwr = 0.025, mid = 0.5, upr = 0.975)
+get_cis(x, lwr = 0.025, med = 0.5, upr = 0.975)
 }
 \arguments{
 \item{x}{is a numeric vector of probabilities}

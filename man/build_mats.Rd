@@ -7,7 +7,7 @@
 build_mats(x, y)
 }
 \arguments{
-\item{x}{is a numeric vector of probabilities (a pdf)}
+\item{x}{is a numeric vector of probabilities (a pmf)}
 
 \item{y}{is a numeric vector of values associated with x}
 }

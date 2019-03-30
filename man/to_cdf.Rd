@@ -2,16 +2,16 @@
 % Please edit documentation in R/inher.R
 \name{to_cdf}
 \alias{to_cdf}
-\title{to_cdf converts numeric pdf vector to cdf of equal length}
+\title{to_cdf converts numeric pmf vector to cdf of equal length}
 \usage{
 to_cdf(vec)
 }
 \arguments{
-\item{vec}{is a numeric pdf}
+\item{vec}{is a numeric pmf}
 }
 \value{
 a numeric vector of the cdf
 }
 \description{
-Given a numeric pdf, returns a numeric vector of the cdf.
+Given a numeric pmf, returns a numeric vector of the cdf.
 }

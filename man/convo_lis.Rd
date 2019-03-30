@@ -9,17 +9,17 @@ convo_lis(lis, dat, vec)
 \arguments{
 \item{lis}{is a list of numeric sorted ranks}
 
-\item{dat}{is a matrix of pdfs rows with cols of obs sorted by rank}
+\item{dat}{is a matrix of pmfs rows with cols of obs sorted by rank}
 
 \item{vec}{is a numeric vector of years}
 }
 \value{
-a matrix of pdfs convolved by subtracting pdf of lowest rank from pdfs
+a matrix of pmfs convolved by subtracting pmf of lowest rank from pmfs
   with ranks in lis
 }
 \description{
-Given a list of numeric sorted ranks (lis), a matrix of pdf rows with
+Given a list of numeric sorted ranks (lis), a matrix of pmf rows with
 cols of obs sorted by rank (dat), and a numeric vector of years (vec),
-returns a matrix of pdfs convolved by subtracting the pdf in dat of lowest rank
-in lis with the set of pdfs with ranks in lis.
+returns a matrix of pmfs convolved by subtracting the pmf in dat of lowest rank
+in lis with the set of pmfs with ranks in lis.
 }

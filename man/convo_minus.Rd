@@ -13,7 +13,7 @@ convo_minus(x, y)
 the set of prob:value pairs in a matrix with cols prob, value ordered by value.
 }
 \description{
-Given two pdfs and a value vector, returns convolved pdf and value vector in matrix.
+Given two pmfs and a value vector, returns convolved pmf and value vector in matrix.
 Values at associated with probs along (y) are subtracted from values associated with probs along (x)
 throughout a discretized x,y event space.  Returns the set of prob:value pairs in a matrix
 with cols prob, value ordered by value.

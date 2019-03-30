@@ -2,7 +2,7 @@
 % Please edit documentation in R/inher.R
 \name{probcomb}
 \alias{probcomb}
-\title{Sums probability age value pairs into a single pdf}
+\title{Sums probability age value pairs into a single pmf}
 \usage{
 probcomb(x, y)
 }
@@ -17,5 +17,5 @@ a numeric vector of length(years) with value of sum probability age is less than
 }
 \description{
 Given a matrix of probability and age value pairs (x), and a vector of years (y),
-returns a pdfs of length(y)
+returns a pmfs of length(y)
 }

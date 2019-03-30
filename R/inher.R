@@ -5,7 +5,7 @@
 #'
 #' Given two vectors of equal length, returns a matrix where values of the first vector are nonzero.
 #'
-#' @param x is a numeric vector of probabilities (a pdf)
+#' @param x is a numeric vector of probabilities (a pmf)
 #' @param y is a numeric vector of values associated with x
 #' @return a dense matrix (x,y) excluding nonzero probabilities in x
 #'
@@ -21,11 +21,11 @@ build_mats <- function(x,y)  {
 
 #' derived pmf by subtraction
 #'
-#' Given two pdfs and an age vector, returns the derived pdf of the convolution y-x.
+#' Given two pmfs and an age vector, returns the derived pmf of the convolution y-x.
 #' Lengths of x,y and index must be equal.
 #'
-#' @param x is a numeric vector (younger pdf)
-#' @param y is a numeric vector (older pdf)
+#' @param x is a numeric vector (younger pmf)
+#' @param y is a numeric vector (older pmf)
 #' @param index is a numeric vector (years)
 #' @return a length(index) numeric vector of the convolved distribution of y-x
 #' @seealso convo_minus
@@ -41,11 +41,11 @@ convo <- function(x,y,index)    {
 
 #' derived pmf by addition
 #'
-#' Given two pdfs and an age vector, returns the derived pdf of the convolution y+x.
+#' Given two pmfs and an age vector, returns the derived pmf of the convolution y+x.
 #' Lengths of x,y and index must be equal.
 #'
-#' @param x is a numeric vector (younger pdf)
-#' @param y is a numeric vector (older pdf)
+#' @param x is a numeric vector (younger pmf)
+#' @param y is a numeric vector (older pmf)
 #' @param index is a numeric vector (years)
 #' @return a length(index) numeric vector of the convolved distribution of y+x
 #' @seealso convo_plus
@@ -60,15 +60,15 @@ convo_add <- function(x,y,index)    {
 
 #' convo_lis subtracts the first distribution from each distribution in a list.
 #'
-#' Given a list of numeric sorted ranks (lis), a matrix of pdf rows with
+#' Given a list of numeric sorted ranks (lis), a matrix of pmf rows with
 #' cols of obs sorted by rank (dat), and a numeric vector of years (vec),
-#' returns a matrix of pdfs convolved by subtracting the pdf in dat of lowest rank
-#' in lis with the set of pdfs with ranks in lis.
+#' returns a matrix of pmfs convolved by subtracting the pmf in dat of lowest rank
+#' in lis with the set of pmfs with ranks in lis.
 #'
 #' @param lis is a list of numeric sorted ranks
-#' @param dat is a matrix of pdfs rows with cols of obs sorted by rank
+#' @param dat is a matrix of pmfs rows with cols of obs sorted by rank
 #' @param vec is a numeric vector of years
-#' @return a matrix of pdfs convolved by subtracting pdf of lowest rank from pdfs
+#' @return a matrix of pmfs convolved by subtracting pmf of lowest rank from pmfs
 #'   with ranks in lis
 
 convo_lis <- function(lis,dat,vec)  {
@@ -82,7 +82,7 @@ convo_lis <- function(lis,dat,vec)  {
 
 #' derived pmf by subtraction
 #'
-#' Given two pdfs and a value vector, returns convolved pdf and value vector in matrix.
+#' Given two pmfs and a value vector, returns convolved pmf and value vector in matrix.
 #' Values at associated with probs along (y) are subtracted from values associated with probs along (x)
 #' throughout a discretized x,y event space.  Returns the set of prob:value pairs in a matrix
 #' with cols prob, value ordered by value.
@@ -100,9 +100,9 @@ convo_minus <- function(x,y)  {
 
 
 
-#' convo_plus convolves two pdfs by adding their values.
+#' convo_plus convolves two pmfs by adding their values.
 #'
-#' Given two pdfs and a value vector, returns convolved pdf and value vector in matrix.
+#' Given two pmfs and a value vector, returns convolved pmf and value vector in matrix.
 #' Values at associated with probs along (x) are added to values associated with probs along (y)
 #' throughout a discretized x,y event space.  Returns the set of prob:value pairs in a matrix
 #' with cols prob, value ordered by value.
@@ -112,28 +112,46 @@ convo_minus <- function(x,y)  {
 
 
 convo_plus <- function(x,y)  {
-    mat <- matrix(0,nrow=nrow(x)*nrow(y),ncol=2)
-    mat[,1] <- mapply(function(a) mapply(function(b,c) b*c, b=a, c=y[,1]), a=x[,1])
-    mat[,2] <- mapply(function(a) mapply(function(b,c) b+c, b=a, c=y[,2]), a=x[,2])
-    mat[order(mat[,2]),]
-    }
+  mat <- matrix(0,nrow=nrow(x)*nrow(y),ncol=2)
+  mat[,1] <- mapply(function(a) mapply(function(b,c) b*c, b=a, c=y[,1]), a=x[,1])
+  mat[,2] <- mapply(function(a) mapply(function(b,c) b+c, b=a, c=y[,2]), a=x[,2])
+  mat[order(mat[,2]),]
+}
 
 
 
-#' FIT PDF TO VALUE VECTOR
+#' Draw from exponential decay distribution
+#'
+#' Draw from exponential decay distribution $y = x^k$
+#'
+#' @param n is the max value returned by the decay function (integer)
+#' @param k is the exponent $x^k$ (numeric)
+#' @return \code{n} draws from the exponential decay distribution.
+#' @export
+
+draw_exp_decay <- function(n,k)  {
+  xs <- 1:n
+  ys <- (n - xs)^k
+  unlist(mapply(function(x,y) rep(x,y), x = xs, y=ys))
+}
+
+
+
+
+#' Find the PMF of values vector.
 #'
 #' Given a numeric vector of values \code{vals}, and an index of values \code{index},
-#' find the pdf of \code{vals}
+#' find the pmf of \code{vals}
 #'
 #' @param vals is a numeric vector of values
 #' @param index is a numeric index of values
-#' @return a numeric vector containing the pdf of \code{vals} along \code{index}
+#' @return a numeric vector containing the pmf of \code{vals} along \code{index}
 #' @export
 
-fit_pdf <- function(vals,index)  {
+fit_pmf <- function(vals,index)  {
   cdf <- to_cdf(vals)
-  pdf <- to_pdf(cdf)
-  mat <- matrix(c(pdf,vals),ncol=2)
+  pmf <- to_pmf(cdf)
+  mat <- matrix(c(pmf,vals),ncol=2)
   probcomb(mat,index)
 }
 
@@ -147,16 +165,17 @@ fit_pdf <- function(vals,index)  {
 #' @param x is a numeric vector of probabilities
 #' @return a numeric vector with values at 2.5\%, median and 97.5\% of the distribution (x)
 
-get_cis <- function(x, lwr=.0250, mid=.5000, upr=.9750)  {
+get_cis <- function(x, lwr=.0250, med=.5000, upr=.9750)  {
   cis <- vector(length=3, mode='numeric')
   vec <- staTools::cdf(x)
   k <- 1
   while (vec$y[k]<lwr) k <- k+1
   cis[1] <- vec$x[k]
-  while (vec$y[k]<mid) k <- k+1
+  while (vec$y[k]<med) k <- k+1
   cis[2] <- vec$x[k]
   while (vec$y[k]<=upr & k<length(vec$y)) k <- k+1
   cis[3] <- vec$x[k]
+  names(cis) <- c('lwr','med','upr')
   cis
 }
 
@@ -164,10 +183,10 @@ get_cis <- function(x, lwr=.0250, mid=.5000, upr=.9750)  {
 
 
 
-#' Sums probability age value pairs into a single pdf
+#' Sums probability age value pairs into a single pmf
 #'
 #' Given a matrix of probability and age value pairs (x), and a vector of years (y),
-#' returns a pdfs of length(y)
+#' returns a pmfs of length(y)
 #'
 #' @param x is a matrix of probability and age pairs
 #' @param y is a numeric vector of years
@@ -178,30 +197,30 @@ get_cis <- function(x, lwr=.0250, mid=.5000, upr=.9750)  {
 
 
 probcomb <- function(x,y)   {
-    prob <- array(0,length(y))
-	  k <- 1
-    n <- length(y)
-	  for (j in 1:nrow(x)){
-		  while (x[j,2] > y[k] & k < n)  k <- k + 1
-		  prob[k] <- prob[k] + x[j,1]
-	  }
-    prob
-    }
+  prob <- array(0,length(y))
+  k <- 1
+  n <- length(y)
+  for (j in 1:nrow(x)){
+    while (x[j,2] > y[k] & k < n)  k <- k + 1
+    prob[k] <- prob[k] + x[j,1]
+  }
+  prob
+}
 
 
 
-#' sum_pdfs add pdfs together and returns a normalized sum
+#' sum_pmfs add pmfs together and returns a normalized sum
 #'
-#' Given a list of numeric pdfs (lis) and an integer representing the length
-#' of pdfs in lis (len), returns a pdf representing the normalized sum of pdfs
+#' Given a list of numeric pmfs (lis) and an integer representing the length
+#' of pmfs in lis (len), returns a pmf representing the normalized sum of pmfs
 #' in lis
 #'
-#' @param lis is a list of numeric pdfs
-#' @param len is an integer representing the length of pdfs in lis
-#' @return a summed and normalized pdf
+#' @param lis is a list of numeric pmfs
+#' @param len is an integer representing the length of pmfs in lis
+#' @return a summed and normalized pmf
 
 
-sum_pdfs <- function(lis,len)  {
+sum_pmfs <- function(lis,len)  {
   mat <- matrix(unlist(lis), nrow = len)
   mat <- mapply(function(a,b,c) sum(b[a,]), a = seq_len(len), MoreArgs = list(b = mat))
   mat / sum(mat)
@@ -210,11 +229,11 @@ sum_pdfs <- function(lis,len)  {
 
 
 
-#' to_cdf converts numeric pdf vector to cdf of equal length
+#' to_cdf converts numeric pmf vector to cdf of equal length
 #'
-#' Given a numeric pdf, returns a numeric vector of the cdf.
+#' Given a numeric pmf, returns a numeric vector of the cdf.
 #'
-#' @param vec is a numeric pdf
+#' @param vec is a numeric pmf
 #' @return a numeric vector of the cdf
 #'
 #' @export
@@ -230,11 +249,11 @@ to_cdf <- function(vec)  {
 
 
 
-#' to_exceed converts numeric pdf vectors to log10 exceedance distributions of equal length
+#' to_exceed converts numeric pmf vectors to log10 exceedance distributions of equal length
 #'
-#' Given a numeric pdf, returns a numeric vector of the log10 exceedance distribution
+#' Given a numeric pmf, returns a numeric vector of the log10 exceedance distribution
 #'
-#' @param vec is a numeric pdf
+#' @param vec is a numeric pmf
 #' @return a numeric vector of the log10 exceedance distribution
 #' @seealso to_cdf
 
@@ -243,11 +262,11 @@ to_exceed <- function(vec)  {
 }
 
 
-#' to_exceed converts numeric pdf vectors to log10 exceedance distributions of equal length
+#' to_exceed converts numeric pmf vectors to log10 exceedance distributions of equal length
 #'
-#' Given a numeric pdf, returns a numeric vector of the log10 exceedance distribution
+#' Given a numeric pmf, returns a numeric vector of the log10 exceedance distribution
 #'
-#' @param vec is a numeric pdf
+#' @param vec is a numeric pmf
 #' @return a numeric vector of the log10 exceedance distribution
 #' @seealso to_cdf
 
@@ -257,21 +276,21 @@ to_lexc <- function(vec)  {
 
 
 
-#' CONVERT VECTOR TO PDF
+#' CONVERT VECTOR TO pmf
 #'
-#' Given the cdf as a numeric vector, return the derived pdf as a numeric vector of equal length.
+#' Given the cdf as a numeric vector, return the derived pmf as a numeric vector of equal length.
 #'
 #' @param cdf is a numeric vector (a cdf)
-#' @return the pdf derived from \code{cdf} as a numeric vector
+#' @return the pmf derived from \code{cdf} as a numeric vector
 #' @export
 
-to_pdf <- function(cdf)  {
-  pdf <- array(0,length(cdf))
-  pdf[1] <- cdf[1]
+to_pmf <- function(cdf)  {
+  pmf <- array(0,length(cdf))
+  pmf[1] <- cdf[1]
   for (i in 2:length(cdf))  {
-    pdf[i] <- cdf[i] - cdf[i-1]
+    pmf[i] <- cdf[i] - cdf[i-1]
   }
-  pdf
+  pmf
 }
 
 
@@ -291,16 +310,16 @@ to_pdf <- function(cdf)  {
 #' @param ftype is a character vector matching facies class
 #' @param n is an integer for number of bootstraps
 #' @param t is a vector of years
-#' @param probs is a matrix with row pdfs and cols of obs ordered by rank
-#' @return matrix with row pdfs and cols for 2.5\%, median, 97.5\% and observed distributions
+#' @param probs is a matrix with row pmfs and cols of obs ordered by rank
+#' @return matrix with row pmfs and cols for 2.5\%, median, 97.5\% and observed distributions
 #'
 #' @export
 #' @import data.table
 #' @import parallel
 #' @importFrom magrittr %>%
 
-boot_convo <- function(dat=sites, ftype, n, t=years, probs=npdf){
-  # subset pdfs by facies type
+boot_convo <- function(dat=sites, ftype, n, t=years, probs=npmf){
+  # subset pmfs by facies type
   dt <- dat[facies == ftype]
   # number of obs
   dt_n <- dt[, .N]
@@ -330,15 +349,15 @@ boot_convo <- function(dat=sites, ftype, n, t=years, probs=npdf){
   cism[1:3,] <- apply(dt,1,get_cis)
   dt <- apply(dt,1,cumsum)
   bit <- apply(dt,2,get_cis)
- # dt <- apply(dt,1,function(a) 1-a)
-#  bat <- apply(dt,1,get_cis)
+  # dt <- apply(dt,1,function(a) 1-a)
+  #  bat <- apply(dt,1,get_cis)
   csl
-#  cis <- mapply(function(a,b) get_cis(b[,.(a)]), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
-#  dt2 <- mapply(function(a,b) cumsum(b[,.(a)]/sum(b[,.(a)])), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
-#  cism[5:7,] <- mapply(function(a,b) get_cis(b[,.(a)]), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
-#  dt3 <- mapply(function(a,b) 1 - b[,.(a)], a=seq_len(ncol(dt2)), MoreArgs=list(b=dt2))
+  #  cis <- mapply(function(a,b) get_cis(b[,.(a)]), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
+  #  dt2 <- mapply(function(a,b) cumsum(b[,.(a)]/sum(b[,.(a)])), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
+  #  cism[5:7,] <- mapply(function(a,b) get_cis(b[,.(a)]), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
+  #  dt3 <- mapply(function(a,b) 1 - b[,.(a)], a=seq_len(ncol(dt2)), MoreArgs=list(b=dt2))
   #  cism[9:11,] <- mapply(function(a,b) get_cis(b[,.(a)]), a=seq_len(ncol(dt)), MoreArgs=list(b=dt))
-#  cis
+  #  cis
 }
 
 
