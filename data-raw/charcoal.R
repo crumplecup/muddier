@@ -58,6 +58,7 @@ charcoal <- data.table(site_id = site_id, family = ids,
       facies = unlist(facies), mn = mns)
 charcoal <- charcoal[order(mns)]
 charcoal$rank <- 1:nrow(charcoal)
+rownames(charcoal) <- site_id[order(mns)]
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(charcoal, overwrite = T)
@@ -67,8 +68,9 @@ char_pmfs <- array(0,dim(npmfs))
 for (i in 1:ncol(npmfs))  {
   char_pmfs[,i] <- npmfs[,names(pmfs) == charcoal$site_id[i]]
 }
-colnames(char_pmfs) <- charcoal$site_id
-rownames(char_pmfs) <- years
+char_pmfs <- as.data.table(t(char_pmfs))
+rownames(char_pmfs) <- charcoal$site_id
+colnames(char_pmfs) <- as.character(years)
 usethis::use_data(char_pmfs, overwrite = T)
 
 
