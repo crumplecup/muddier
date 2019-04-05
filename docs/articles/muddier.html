@@ -76,7 +76,7 @@
       <h1>muddier</h1>
                         <h4 class="author">Erik Rose</h4>
             
-            <h4 class="date">2019-04-04</h4>
+            <h4 class="date">2019-04-06</h4>
       
       
       <div class="hidden name"><code>muddier.Rmd</code></div>
@@ -91,399 +91,139 @@
 </h2>
 <p>The package  is inspired by the field of fluvial geomorphology. Correcting for the inhertied ages of radiocarbon-dated charcoal in samples of debris-flow deposits in headwater streams concerns a particular application of deriving a PMF from two parent PMFs through convolution. The functions in  are an attempt to abstract the particulars of the application into a more general set of tools for converting emprical observational data into CDFs, PMFs, and for deriving PMFs from multiple parent PMFs.</p>
 </div>
-<div id="horse-trading" class="section level2">
+<div id="charcoal-data" class="section level2">
 <h2 class="hasAnchor">
-<a href="#horse-trading" class="anchor"></a>Horse Trading</h2>
-<p>Let’s play a game called Horse Trading, where you are the prospective buyer of a racehorse. It is your desire to buy the horse that will win the most amount of races on average.</p>
-<p>Each horse has two attributes, strength and heart. Strength represents the stamina and health of the animal, and heart represent their fighting spirit. Strength does not vary much from race to race, and will always be a sequence of two consecutive numbers. Heart is more variable, and draws from a normal distribution with mean zero. The numeric value of the heart attribute determines the standard deviation of the distribution. To determine the winner of a race, choose either number from the strength couplet with equal likelihood, and take a random draw from the heart distribution. Add the two numbers together and this is the total effort applied by the horse. The horse to exert the most effort wins the race!</p>
-</div>
-<div id="first-purchase" class="section level2">
-<h2 class="hasAnchor">
-<a href="#first-purchase" class="anchor"></a>First Purchase</h2>
-<p>Now you must choose between two prospective racehorses for your stable. Which is the finer steed? The first is Arnold, a burly reliable horse. Arnold has a strength of 10-11. When it comes to fiery spirit, Arnold exhibits a lackluster work ethic, with a heart of mean 0 and sd 1.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">777</span>)
-n &lt;-<span class="st"> </span><span class="dv">10000</span>                               <span class="co"># number of bootstraps</span>
-y &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">15</span>
-
-
-arnold_str &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="dt">length=</span><span class="dv">15</span>, <span class="dt">mode=</span><span class="st">'numeric'</span>)
-<span class="co"># where y values are 10:11, change str prob to 50%</span>
-arnold_str[<span class="dv">10</span><span class="op">:</span><span class="dv">11</span>] &lt;-<span class="st"> </span>.<span class="dv">5</span>
-arn_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(<span class="dv">1000</span>,<span class="dv">0</span>,<span class="dv">1</span>)
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y, arnold_str, <span class="dt">main=</span><span class="st">'Arnold Strength'</span>, <span class="dt">type=</span><span class="st">'l'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/density">density</a></span>(arn_hrt_obs), <span class="dt">main=</span><span class="st">'Arnold Heart'</span>)</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-1-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-1-2.png" width="700"></p>
-<p>The second horse is named Rudy. Rudy is small and slow, and other racehorses laugh at him and tease him. His strength has a range of 1-2. But Rudy has the heart of a true warrior, with a sd of 12.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Random">set.seed</a></span>(<span class="dv">777</span>)
-n &lt;-<span class="st"> </span><span class="dv">10000</span>                               <span class="co"># number of bootstraps</span>
-y &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">10</span>
-rudy_str &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="dt">length=</span><span class="dv">10</span>, <span class="dt">mode=</span><span class="st">'numeric'</span>)
-<span class="co"># where y values are 1-2, change str prob to 50%</span>
-rudy_str[<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>] &lt;-<span class="st"> </span>.<span class="dv">5</span>
-rud_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n,<span class="dv">0</span>,<span class="dv">12</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y,rudy_str, <span class="dt">main=</span><span class="st">'Rudy Strength'</span>, <span class="dt">type=</span><span class="st">'l'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/density">density</a></span>(rud_hrt_obs), <span class="dt">main=</span><span class="st">'Rudy Heart'</span>)</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-2-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-2-2.png" width="700"></p>
-</div>
-<div id="horseshoe-strapping" class="section level2">
-<h2 class="hasAnchor">
-<a href="#horseshoe-strapping" class="anchor"></a>Horseshoe-strapping</h2>
-<p>One method to determine which horse is more likely to win a race is bootstrapping, in this case using horseshoes.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">n &lt;-<span class="st"> </span><span class="dv">10000</span>                               <span class="co"># number of bootstraps</span>
-
-ar_str &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sample">sample</a></span>(<span class="dv">10</span><span class="op">:</span><span class="dv">11</span>,n,<span class="dt">rep=</span>T)          <span class="co"># arnold strength values</span>
-ar_hrt &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n,<span class="dv">0</span>,<span class="dv">1</span>)                   <span class="co"># arnold heart values</span>
-ar_res &lt;-<span class="st"> </span>ar_str <span class="op">+</span><span class="st"> </span>ar_hrt                <span class="co"># arnold resulting race effort</span>
-
-rd_str &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sample">sample</a></span>(<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>,n,<span class="dt">rep=</span>T)            <span class="co"># rudy strength values</span>
-rd_hrt &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n,<span class="dv">0</span>,<span class="dv">12</span>)                 <span class="co"># rudy heart values</span>
-rd_res &lt;-<span class="st"> </span>rd_str <span class="op">+</span><span class="st"> </span>rd_hrt                <span class="co"># rudy resulting race effort</span>
-
-ar_wins &lt;-<span class="st"> </span>ar_res <span class="op">-</span><span class="st"> </span>rd_res               <span class="co"># arnold effort minus rudy effort</span>
-<span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(ar_wins))  {         
-  <span class="cf">if</span> (ar_wins[i] <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>)  {
-    ar_wins[i] &lt;-<span class="st"> </span><span class="dv">1</span>                      <span class="co"># if positive arnold wins</span>
-  } <span class="cf">else</span> {
-    ar_wins[i] &lt;-<span class="st"> </span><span class="dv">0</span>                      <span class="co"># if negative rudy wins</span>
-  }
-}
-ar_wins &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(ar_wins) <span class="op">/</span><span class="st"> </span>n <span class="op">*</span><span class="st"> </span><span class="dv">100</span>        <span class="co"># convert to %</span>
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">'Arnold wins '</span>,ar_wins,<span class="st">'% of the time.'</span>))
-<span class="co">#&gt; [1] "Arnold wins 77.3% of the time."</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">'Rudy wins '</span>,<span class="dv">100</span><span class="op">-</span>ar_wins,<span class="st">'% of the time.'</span>))
-<span class="co">#&gt; [1] "Rudy wins 22.7% of the time."</span></code></pre></div>
-<p>As you can see, the strength of Arnold prevails over the fiery heart of Rudy, and the wise horse trader would purchase Arnold. The clever math student reading has already come to the conclusion that the higher strength will always win, because the mean for all heart attributes is zero. The long term average will center on zero regardless of how high the horse’s heart sd value. But this is just a game! Now let’s see how the <code>muddier</code> package can help you to do the same thing, but in a more complicated way.</p>
-</div>
-<div id="deriving-pmfs-using-muddier" class="section level2">
-<h2 class="hasAnchor">
-<a href="#deriving-pmfs-using-muddier" class="anchor"></a>Deriving pmfs using <code>muddier</code>
-</h2>
-<p>The <code>muddier</code> package derives a pmf from two other pmfs using convolution. Since R is vectorized, we represent a pmf as a discretized PMF. To calculate the PMF for a given variable, <code>muddier</code> first calculates the CDF of the variable, then derives the PMF from the CDF using the function <code><a href="../reference/fit_pmf.html">fit_pmf()</a></code>.</p>
-<p>The function <code><a href="../reference/fit_pmf.html">fit_pmf()</a></code> takes two arguments. The first agrument <code>vals</code> is the sorted numeric vector of variable values. The values need to be sorted in ascending order for the function to derive the CDF properly, and it will not warn you if the output is nonsense, so sort your numeric vectors.</p>
-<p>The second argument <code>index</code> is the range of values along which to derive the PMF. The <code>index</code> will make more sense seen in action. Let’s convert Arnold’s and Rudy’s attributes into PMFs using <code><a href="../reference/fit_pmf.html">fit_pmf()</a></code>:</p>
+<a href="#charcoal-data" class="anchor"></a>Charcoal Data</h2>
+<p>The <code>muddier</code> package includes data from Lancaster &amp; Casebeer (2007) on charcoal samples taken from bank stratigraphy adjacent to headwater streams in the OCR. The table <code>charcoal</code> contains site data from the field surveys where they collected the charcoal samples. The table <code>char_pmfs</code> is the radiocarbon age distribution associated with each sample. To load the data, you can use the <code>data</code> function, or simply type <code><a href="https://www.rdocumentation.org/packages/base/topics/library">library(muddier)</a></code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(muddier)
-n &lt;-<span class="st"> </span><span class="dv">10000</span>                                              <span class="co"># number of bootstraps</span>
-y &lt;-<span class="st"> </span><span class="op">-</span><span class="dv">59</span><span class="op">:</span><span class="dv">60</span>                                           <span class="co"># index range </span>
 
-arn_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="dv">10</span><span class="op">:</span><span class="dv">11</span>),y)                       <span class="co"># arnold strength pmf</span>
-arn_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(arn_hrt_obs),y)                <span class="co"># arnold heart pmf</span>
+<span class="co"># load package data without loading package</span>
+<span class="co"># data(charcoal, package = 'muddier')</span>
+<span class="co"># data(char_pmfs, package = 'muddier')</span>
 
-rud_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="dv">1</span><span class="op">:</span><span class="dv">2</span>),y)                         <span class="co"># rudy strength pmf</span>
-rud_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(rud_hrt_obs),y)              <span class="co"># rudy heart pmf</span>
+<span class="co"># inspect charcoal table</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/head">head</a></span>(charcoal)
+<span class="co">#&gt;    site_id  family facies         mn rank</span>
+<span class="co">#&gt; 1:   BC-52   BC-52     DF -44.878432    1</span>
+<span class="co">#&gt; 2:   BC-50   BC-50     DF -34.854693    2</span>
+<span class="co">#&gt; 3:   BC-49   BC-49     DF -29.771460    3</span>
+<span class="co">#&gt; 4: GRC_102 GRC_102     DF -22.887912    4</span>
+<span class="co">#&gt; 5:   BC-31   BC-31     FG  -5.023305    5</span>
+<span class="co">#&gt; 6:   GRC-8   GRC-8     FG  -1.462758    6</span></code></pre></div>
+<p>The <code>charcoal</code> dataset has 370 observations listed as rows. The rownames of the object and the first column of data are the site ids. At sites where the researchers took multiple samples, the site ids will have letters appended to them (eg. LK-187a, LK-187b, LK-187c). The <code>family</code> column is the site id stripped of any ending letters, so that all observations from the same site share the same family id. Researchers classified the deposit type of samples as fluvial fines (FF), fluvial gravels (FG) and debris-flow deposits (DF). The <code>facies</code> column indicates the facies type using the two-letter classification codes (FF, FG, DF). The <code>mn</code> column is the mean sample age BP as derived from the pmf in <code>char_pmfs</code>, and <code>rank</code> is the ordinal rank of each sample from youngest to oldest.</p>
+<p>If we examine the dimensions of each dataset, we see that both have 370 observations, but <code>char_pmfs</code> has 4,430 columns. If we plot the values of a row against the values of the columns names, the result is the age distribution pmf of the sample.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(magrittr)
 
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y,arn_str, <span class="dt">main=</span><span class="st">'Arnold Strength PMF'</span>, <span class="dt">xlim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">15</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y,arn_hrt, <span class="dt">main=</span><span class="st">'Arnold Heart PMF'</span>, <span class="dt">xlim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">5</span>,<span class="dv">5</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y,rud_str, <span class="dt">main=</span><span class="st">'Rudy Strength PMF'</span>, <span class="dt">xlim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">15</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y,rud_hrt, <span class="dt">main=</span><span class="st">'Rudy Heart PMF'</span>, <span class="dt">xlim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">50</span>,<span class="dv">50</span>))</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-4-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-4-2.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-4-3.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-4-4.png" width="700"></p>
-<p><code><a href="../reference/fit_pmf.html">fit_pmf()</a></code> derives the PMF of the variable by discretizing the CDF into segments along the range of the <code>index</code>. In this case the <code>index</code> was a sequence of integers from -59 to 60.</p>
-<p>For an index value of <code>x</code>, <code><a href="../reference/fit_pmf.html">fit_pmf()</a></code> calculates the cumulative probability the variable <code>vals</code> is equal to or greater than <code>x</code> and not greater than <code>x+1</code>. If you want more detail about the distribution along narrow range increments, increase the number of increments in the <code>index</code> within the desired range:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">y2 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="op">-</span><span class="dv">59</span>,<span class="dv">60</span>,.<span class="dv">01</span>)
-arn_hrt2 &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(arn_hrt_obs),y2)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(y2,arn_hrt2, <span class="dt">main=</span><span class="st">'Arnold Heart PMF'</span>, <span class="dt">xlim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">5</span>,<span class="dv">5</span>))</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
+<span class="co"># compare dimensions of objects</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(charcoal)
+<span class="co">#&gt; [1] 370   5</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(char_pmfs)
+<span class="co">#&gt; [1]  370 4430</span>
+
+years &lt;-<span class="st"> </span>char_pmfs <span class="op">%&gt;%</span><span class="st"> </span>colnames <span class="op">%&gt;%</span><span class="st"> </span>as.numeric
+probs &lt;-<span class="st"> </span>char_pmfs[<span class="dv">250</span>,] <span class="op">%&gt;%</span><span class="st"> </span>as.numeric
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(years, probs, <span class="dt">xlim=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">1000</span>,<span class="dv">1400</span>), <span class="dt">main=</span><span class="st">'pmf of ob# 250'</span>)</code></pre></div>
+<p><img src="muddier_files/figure-html/unnamed-chunk-2-1.png" width="700"></p>
+<p>To produce these two datasets, I performed several operations on a csv file converted from the Excel file containing the original Lancaster &amp; Casebeer (2007) data. The file used to perform these operations is stored in the <code>data-raw</code> folder on the github reposity for this project. Compared to the original data, this data has been sorted by mean age, and split into two datasets, one for sample variable data and one for numeric pmf vectors associated with each sample.</p>
+<p>Before we begin analyzing the data, I would like to verify that the datasets have been sorted correctly, and that the pmfs all sum to 1. First I will make sure the rownames of the two datasets match, then I will test that each row of <code>char_pmfs</code> sums to 1. Finally, I want to make sure the calculated means in <code>charcoal</code> match the means of the pmfs in <code>char_pmfs</code>. To do this, I use the <code>testthat</code> package which employs the function <code>expect_equal</code>. If the two arguments are equal to within a tolerance range, the test passes silently. If the two arguments are not equal, the test fails with a warning. Failure causes abortion of vignette construction, so every time you see a test run in code, that means it has passed. I will explicitly mark unexecuted lines of code with the comment <code># not run</code> at the top of the code snippet.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(testthat)
+<span class="co">#&gt; </span>
+<span class="co">#&gt; Attaching package: 'testthat'</span>
+<span class="co">#&gt; The following objects are masked from 'package:magrittr':</span>
+<span class="co">#&gt; </span>
+<span class="co">#&gt;     equals, is_less_than, not</span>
+
+<span class="co"># load package data</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(charcoal, <span class="dt">package =</span> <span class="st">'muddier'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/utils/topics/data">data</a></span>(char_pmfs, <span class="dt">package =</span> <span class="st">'muddier'</span>)
+
+years &lt;-<span class="st"> </span>char_pmfs <span class="op">%&gt;%</span><span class="st"> </span>colnames <span class="op">%&gt;%</span><span class="st"> </span>as.numeric
+mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(char_pmfs, <span class="dv">1</span>, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, a))
+
+
+<span class="co"># test rownames are equal</span>
+<span class="co"># test means are equal</span>
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'charcoal and char_pmfs match'</span>, {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(charcoal), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(char_pmfs))
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(charcoal<span class="op">$</span>mn), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(mns))
+  })
+
+
+<span class="co"># test the pmfs sum to 1</span>
+sums &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(char_pmfs, <span class="dv">1</span>, sum) <span class="op">%&gt;%</span><span class="st"> </span>as.numeric
+ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(char_pmfs))
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(sums<span class="op">-</span>ones)  <span class="co"># examine tolerance</span>
+<span class="co">#&gt; [1] 4.51155e-05</span>
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'pmfs in char_pmfs sum to 1'</span>, {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(sums, ones, <span class="dt">tolerance =</span> <span class="fl">1e-4</span>)
+})</code></pre></div>
+<p>Note that the pmfs will not sum exactly to one due to rounding error. First I examine the maximum size of the rounding error with <code><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max(sums-ones)</a></code>. I explictly set <code>tolerance = 1e-4</code> to ingore this rounding error. Having passed the initial round of tests, I am confident the two datasets are correctly ordered and match, and we can proceed to calculate inherited age.</p>
 </div>
-<div id="convolution-using-convo_add" class="section level2">
+<div id="subsetting-sites-by-family-and-facies" class="section level2">
 <h2 class="hasAnchor">
-<a href="#convolution-using-convo_add" class="anchor"></a>Convolution using <code><a href="../reference/convo_add.html">convo_add()</a></code>
-</h2>
-<p>If you have two distributions, <code>x</code> and <code>y</code>, then let <code>w</code> be the sum of the two:</p>
-<pre><code>w = x + y</code></pre>
-<p><code>muddier</code> uses the <code><a href="../reference/convo_add.html">convo_add()</a></code> function to derive the PMF of <code>w</code> given the PMFs of <code>x</code> and <code>y</code>, along the range of <code>index</code>.</p>
-<p>Now imagine that <code>x</code> and <code>y</code> stand for strength and heart, then <code>w</code> represents total race effort. We can use <code><a href="../reference/convo_add.html">convo_add()</a></code> to derive the PMF of race effort given the variables for strength and agility for a given horse.</p>
-<p>Rudy’s performance distribution is spread out compared to Arnold. By using different <code>index</code> ranges for each horse, we can provide more or less smoothing to the shape of the curve on the plot of the resulting PMF.</p>
-<p>One cautionary note is that the <code>index</code> range must include the range of all possible input and outcome values of the convolution of <code>x</code> and <code>y</code>. In the case of Arnold, the <code>index</code> must start below -4 because the empiric distribution of Arnold’s heart attribute we generated in the code includes a value of almost -4 in the tail, even though all the values resulting from the convolution are greater than 6.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(muddier)
-n &lt;-<span class="st"> </span><span class="dv">10000</span>                                      <span class="co"># number of bootstraps</span>
-ya &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="op">-</span><span class="dv">5</span>,<span class="dv">20</span>,.<span class="dv">05</span>)                              <span class="co"># index for arnold</span>
-yr &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="op">-</span><span class="dv">59</span>,<span class="dv">60</span>,<span class="dv">1</span>)                           <span class="co"># index for rudy</span>
+<a href="#subsetting-sites-by-family-and-facies" class="anchor"></a>Subsetting sites by family and facies</h2>
+<p><code>charcoal</code> is organized as a data.table to enable simple subsetting operations by the user. The convenient <code>.N</code> term for delineating number of observations is convenient for producing summary statistics, when combined with <code>by</code> indicated the variable for which to count observations. The data.table format allows the user to treat column names as variables when inside brackets, so subsetting a data.table using a logical test is as straightforward as <code>charcoal[facies == 'DF']</code>.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(data.table)
 
-arn_str_obs &lt;-<span class="st"> </span><span class="dv">10</span><span class="op">:</span><span class="dv">11</span>
-arn_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n, <span class="dv">0</span>, <span class="dv">1</span>)
+<span class="co"># subset by facies</span>
+df_count &lt;-<span class="st"> </span>charcoal[facies <span class="op">==</span><span class="st"> 'DF'</span>, .N, by =<span class="st"> </span>family]
+ff_count &lt;-<span class="st"> </span>charcoal[facies <span class="op">==</span><span class="st"> 'FF'</span>, .N, by =<span class="st"> </span>family]
+fg_count &lt;-<span class="st"> </span>charcoal[facies <span class="op">==</span><span class="st"> 'FG'</span>, .N, by =<span class="st"> </span>family]
 
-rud_str_obs &lt;-<span class="st"> </span><span class="dv">1</span><span class="op">:</span><span class="dv">2</span>
-rud_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n, <span class="dv">0</span>, <span class="dv">12</span>)
-
-arn_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(arn_str_obs), ya)         <span class="co"># arnold strength pmf</span>
-arn_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(arn_hrt_obs), ya)         <span class="co"># arnold heart pmf</span>
-
-rud_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(rud_str_obs), yr)                 <span class="co"># rudy strength pmf</span>
-rud_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(rud_hrt_obs), yr)      <span class="co"># rudy heart pmf</span>
-
-arn_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(arn_str,arn_hrt, ya)         <span class="co"># arnold effort derived pmf</span>
-rud_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(rud_str,rud_hrt, yr)         <span class="co"># rudy effort derived pmf</span>
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(ya,arn_eff, <span class="dt">main=</span><span class="st">'Arnold Race Effort PMF'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">5</span>,<span class="dv">15</span>))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(yr,rud_eff, <span class="dt">main=</span><span class="st">'Rudy Race Effort PMF'</span>)</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-6-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-6-2.png" width="700"></p>
+<span class="co"># family ids of sites with &gt; 3 obs</span>
+df_count[N<span class="op">&gt;</span><span class="dv">3</span>]
+<span class="co">#&gt;     family  N</span>
+<span class="co">#&gt; 1: LK_0.16  9</span>
+<span class="co">#&gt; 2:  LK_151 10</span>
+<span class="co">#&gt; 3: LK_0.42 10</span>
+<span class="co">#&gt; 4:   LK_67 10</span>
+<span class="co">#&gt; 5:   LK_31  9</span>
+<span class="co">#&gt; 6:   UK_53  8</span>
+<span class="co">#&gt; 7:  LK_145  6</span>
+ff_count[N<span class="op">&gt;</span><span class="dv">3</span>]
+<span class="co">#&gt;    family  N</span>
+<span class="co">#&gt; 1: LK_118 11</span>
+<span class="co">#&gt; 2: LK_148  8</span>
+<span class="co">#&gt; 3: LK_187 10</span>
+fg_count[N<span class="op">&gt;</span><span class="dv">3</span>]
+<span class="co">#&gt;     family  N</span>
+<span class="co">#&gt; 1: DFK_140 13</span>
+<span class="co">#&gt; 2: DFK_141  8</span>
+<span class="co">#&gt; 3:   LK_36  6</span>
+<span class="co">#&gt; 4:    UK_1  8</span></code></pre></div>
 </div>
-<div id="mean-race-effort" class="section level2">
+<div id="inherited-age" class="section level2">
 <h2 class="hasAnchor">
-<a href="#mean-race-effort" class="anchor"></a>Mean Race Effort</h2>
-<p>We can examine the mean performance effort of a horse using the <code>weighted.mean</code> function from the <code>stats</code> package.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"Arnold's mean race effort is "</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(ya, arn_eff)))
-<span class="co">#&gt; [1] "Arnold's mean race effort is 10.513085"</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">"Rudy's mean race effort is "</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(yr, rud_eff)))
-<span class="co">#&gt; [1] "Rudy's mean race effort is 2.0826"</span></code></pre></div>
-<p>As expected, Arnold’s mean race effort is approximately equal to his mean strength of 10.5, as well as Rudy at 1.5. Rudy’s sample mean has a greater variance from the true mean because of the broader spread of the distribution compared to Arnold.</p>
-</div>
-<div id="an-example-stable" class="section level2">
-<h2 class="hasAnchor">
-<a href="#an-example-stable" class="anchor"></a>An Example Stable</h2>
-<p>Let’s take a look at a few other horses by visiting an examle stable where several steeds have an established race record.</p>
-<p>The first horse, Lucky, has a strength of 5-6, which is average, and an unusual distribution for the heart attribute, taking the shape of an exponential decay function of the form:</p>
-<p><span class="math display">\[ y = (n - x)^k \]</span> where <code>n</code> is max value of <code>x</code>, and <code>k = 2</code>. For this vignette, <code>muddier</code> includes a convenience wrapper utility for drawing samples from this distribution called <code><a href="../reference/draw_exp_decay.html">draw_exp_decay(n, k)</a></code>.</p>
-<p>The next two horses are called Abbott and Costello. Abbott’s strength is smaller at 4-5, and Costello’s strength is larger at 7-8. Abbott and Costello have normally distributed heart attributes, but Abbott has a mean heart value of 0 but his emotions are also prone to wild swings, with a sd of 7. Costello is more even-keeled and optimistic than Abbott, with a mean heart value of 1 and a sd of 3.</p>
+<a href="#inherited-age" class="anchor"></a>Inherited Age</h2>
+<p>Inherited age is the age of the charcoal before becoming entrained in bank deposits. By taking multiple samples of a facies type at a single sampling site, Lancaster &amp; Casebeer (2007) were able to estimate a distribution range around inherited age.</p>
+<p><code>charcoal</code> is intentionally sorted by rank so that an index of ranks is equivalent to the index of observations by row. Furthermore, the rank number of a sample from <code>charcoal</code> is equivalent to row number of the pmf for the same sample in <code>char_pmfs</code>. Rather than searching by site_id, I have elected to use rank number, and so the function <code><a href="../reference/rank_list.html">rank_list(ftype, dat = charcoal, min_count = 3)</a></code> returns the ranks of observations of a given facies type from <code>dat</code> above a minimum count <code>min_count</code>, with <code>dat</code> set to the charcoal data as a default, and minimum count set to 3.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-ys &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq</a></span>(<span class="op">-</span><span class="dv">400</span>,<span class="dv">400</span>,.<span class="dv">1</span>)
+df_ranks &lt;-<span class="st"> </span><span class="kw"><a href="../reference/rank_list.html">rank_list</a></span>(<span class="st">'DF'</span>)
+ff_ranks &lt;-<span class="st"> </span><span class="kw"><a href="../reference/rank_list.html">rank_list</a></span>(<span class="st">'FF'</span>)
+fg_ranks &lt;-<span class="st"> </span><span class="kw"><a href="../reference/rank_list.html">rank_list</a></span>(<span class="st">'FG'</span>)
 
-luck_str_obs &lt;-<span class="st"> </span><span class="dv">5</span><span class="op">:</span><span class="dv">6</span>
-abb_str_obs &lt;-<span class="st"> </span><span class="dv">3</span><span class="op">:</span><span class="dv">4</span>
-cost_str_obs &lt;-<span class="st"> </span><span class="dv">7</span><span class="op">:</span><span class="dv">8</span>
+<span class="co"># inspect output</span>
+df_ranks[[<span class="dv">1</span>]]
+<span class="co">#&gt; [1]  20  34  36  44  51  55  62  83 153</span>
 
-lucky_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(luck_str_obs, ys)                    <span class="co"># lucky strength pmf</span>
-abbott_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(abb_str_obs, ys)                    <span class="co"># abbott strength pmf</span>
-costello_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(cost_str_obs, ys)                 <span class="co"># costello strength pmf</span>
+<span class="co"># family ids pulled by rank</span>
+df_by_ranks &lt;-<span class="st"> </span>charcoal[rank <span class="op">%in%</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(df_ranks), family] <span class="op">%&gt;%</span><span class="st"> </span>factor <span class="op">%&gt;%</span><span class="st"> </span>levels <span class="op">%&gt;%</span><span class="st"> </span>sort
+ff_by_ranks &lt;-<span class="st"> </span>charcoal[rank <span class="op">%in%</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(ff_ranks), family] <span class="op">%&gt;%</span><span class="st"> </span>factor <span class="op">%&gt;%</span><span class="st"> </span>levels <span class="op">%&gt;%</span><span class="st"> </span>sort
+fg_by_ranks &lt;-<span class="st"> </span>charcoal[rank <span class="op">%in%</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(fg_ranks), family] <span class="op">%&gt;%</span><span class="st"> </span>factor <span class="op">%&gt;%</span><span class="st"> </span>levels <span class="op">%&gt;%</span><span class="st"> </span>sort
 
-luck_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/draw_exp_decay.html">draw_exp_decay</a></span>(<span class="dv">25</span>, <span class="dv">2</span>)
-abb_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n, <span class="dv">0</span>, <span class="dv">7</span>)
-cost_hrt_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/Normal">rnorm</a></span>(n, <span class="dv">1</span>, <span class="dv">3</span>)
+<span class="co"># family ids pulled by count</span>
+df_by_count &lt;-<span class="st"> </span>df_count[N<span class="op">&gt;</span><span class="dv">3</span>,family] <span class="op">%&gt;%</span><span class="st"> </span>unlist <span class="op">%&gt;%</span><span class="st"> </span>sort
+ff_by_count &lt;-<span class="st"> </span>ff_count[N<span class="op">&gt;</span><span class="dv">3</span>,family] <span class="op">%&gt;%</span><span class="st"> </span>unlist <span class="op">%&gt;%</span><span class="st"> </span>sort
+fg_by_count &lt;-<span class="st"> </span>fg_count[N<span class="op">&gt;</span><span class="dv">3</span>,family] <span class="op">%&gt;%</span><span class="st"> </span>unlist <span class="op">%&gt;%</span><span class="st"> </span>sort
 
-lucky_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(luck_hrt_obs), ys)              <span class="co"># lucky heart pmf</span>
-abbott_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(abb_hrt_obs), ys)              <span class="co"># abbott heart pmf</span>
-costello_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(cost_hrt_obs), ys)           <span class="co"># costello heart pmf</span>
-
-
-<span class="co"># plot race attributes</span>
-
-<span class="co"># strength attribute</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(ys[abbott_str <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>],abbott_str[abbott_str <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">15</span>,<span class="dv">10</span>), <span class="dt">col =</span> <span class="st">'red'</span>,
-     <span class="dt">main =</span> <span class="st">'PMF of Strength Values'</span>, <span class="dt">xlab =</span> <span class="st">'Strength Value'</span>,
-     <span class="dt">ylab =</span> <span class="st">'Pr of value X'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(ys[costello_str <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], costello_str[costello_str <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], 
-       <span class="dt">col=</span><span class="st">'steelblue'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(ys[lucky_str <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], lucky_str[lucky_str <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], 
-       <span class="dt">col=</span><span class="st">'forestgreen'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'topleft'</span>, <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'Abbott'</span>, <span class="st">'Costello'</span>, <span class="st">'Lucky'</span>),
-       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'red'</span>, <span class="st">'steelblue'</span>, <span class="st">'forestgreen'</span>))
-
-<span class="co"># heart attribute</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(ys[abbott_hrt <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>],abbott_hrt[abbott_hrt <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], <span class="dt">col =</span> <span class="st">'red'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="op">-</span><span class="dv">10</span>,<span class="dv">50</span>),
-     <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,.<span class="dv">15</span>), <span class="dt">xlab =</span> <span class="st">'Heart Value'</span>, <span class="dt">ylab =</span> <span class="st">'Pr of value X'</span>,
-     <span class="dt">main =</span> <span class="st">'PMF of Heart Values'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(ys[costello_hrt <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], costello_hrt[costello_hrt <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>],
-       <span class="dt">col =</span> <span class="st">'steelblue'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(ys[lucky_hrt <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>], lucky_hrt[lucky_hrt <span class="op">&gt;</span><span class="st"> </span><span class="dv">0</span>],
-       <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'topright'</span>, <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'Abbott'</span>, <span class="st">'Costello'</span>, <span class="st">'Lucky'</span>),
-       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'red'</span>, <span class="st">'steelblue'</span>, <span class="st">'forestgreen'</span>))</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-8-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-8-2.png" width="700"></p>
-</div>
-<div id="mean-stable-race-effort" class="section level2">
-<h2 class="hasAnchor">
-<a href="#mean-stable-race-effort" class="anchor"></a>Mean Stable Race Effort</h2>
-<p>Let us say the imaginary owner of the example stable has bought Arnold and Ruby from the previous example, so the total number of horses in the stable is 5. We can examine the change in mean race power of the stable as follows:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-<span class="co"># fit arnold and rudy obs to common index ys</span>
-arn_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(arn_str_obs), ys)        <span class="co"># arnold strength pmf</span>
-arn_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(arn_hrt_obs), ys)        <span class="co"># arnold heart pmf</span>
-
-rud_str &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(rud_str_obs), ys)        <span class="co"># rudy strength pmf</span>
-rud_hrt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/fit_pmf.html">fit_pmf</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(rud_hrt_obs), ys)        <span class="co"># rudy heart pmf</span>
-
-
-<span class="co"># derived pmfs</span>
-abb_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(abbott_str, abbott_hrt, ys)      <span class="co"># abbott effort pmf</span>
-cos_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(costello_str, costello_hrt, ys)  <span class="co"># costello effort pmf</span>
-luck_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(lucky_str, lucky_hrt, ys)  <span class="co"># lucky effort pmf</span>
-arn_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(arn_str,arn_hrt,ys)         <span class="co"># arnold effort derived pmf</span>
-rud_eff &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_add.html">convo_add</a></span>(rud_str,rud_hrt,ys)         <span class="co"># rudy effort derived pmf</span>
-
-prev_eff &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(ys, abb_eff <span class="op">+</span><span class="st"> </span>cos_eff <span class="op">+</span><span class="st"> </span>luck_eff)
-cur_eff &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(ys, abb_eff <span class="op">+</span><span class="st"> </span>cos_eff <span class="op">+</span><span class="st"> </span>luck_eff <span class="op">+</span><span class="st"> </span>arn_eff <span class="op">+</span><span class="st"> </span>rud_eff)
-
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">'Previous stable mean race effort was '</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Round">round</a></span>(prev_eff, <span class="dv">2</span>)))
-<span class="co">#&gt; [1] "Previous stable mean race effort was 8.12"</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/paste">paste0</a></span>(<span class="st">'Current stable mean race effort is '</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Round">round</a></span>(cur_eff, <span class="dv">2</span>)))
-<span class="co">#&gt; [1] "Current stable mean race effort is 7.31"</span></code></pre></div>
-</div>
-<div id="official-race-record" class="section level2">
-<h2 class="hasAnchor">
-<a href="#official-race-record" class="anchor"></a>Official Race Record</h2>
-<p>The bookies at the local track keep an official tally of the participants of every race, the effort put forth by each horse, and the winning horse for each event. We can create a similar race record for the five horses at our stable.</p>
-<p>Let us run 10,000 imaginary races between the five horses in the stable and observe the resulting race record. First I collect the empiric attribute observations for each horse into a list, collect each of these horse attribute lists into a stable list. Then I define the function <code>run_horse</code> to take a random sample from the list of empiric strength and heart observations for a given horse. The function <code>run_race</code> is a list wrapper that runs the function <code>run_horse</code> for each horse in the stable list. The result is a record of race effort for each horse.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-lucky &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(luck_str_obs, luck_hrt_obs)
-abbott &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(abb_str_obs, abb_hrt_obs)
-costello &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(cost_str_obs, cost_hrt_obs)
-arnold &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(arn_str_obs, arn_hrt_obs)
-rudy &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(rud_str_obs, rud_hrt_obs)
-
-stable &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(lucky, abbott, costello, arnold, rudy)
-
-
-run_horse &lt;-<span class="st"> </span><span class="cf">function</span>(str, hrt) {
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sample">sample</a></span>(str, <span class="dv">1</span>) <span class="op">+</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sample">sample</a></span>(hrt, <span class="dv">1</span>)
-}
-
-run_race &lt;-<span class="st"> </span><span class="cf">function</span>(stable)  {
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(stable, <span class="cf">function</span>(a) <span class="kw">run_horse</span>(a[[<span class="dv">1</span>]], a[[<span class="dv">2</span>]])))
-}
-
-record &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/array">array</a></span>(<span class="dv">0</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(n, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(stable)))
-
-<span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_len</a></span>(n))  {
-  record[i,] &lt;-<span class="st"> </span><span class="kw">run_race</span>(stable)
-}</code></pre></div>
-<p>For the convenience of the bookies, we need to translate the raw race effort values into simple wins and losses, so they can lay odds. The function <code>score_winner</code> takes a vector of race effort values and returns a vector of equal length with value 1 at the index of max race effort, and zero otherwise. Note this method permits ties, which we can ignore for this vignette.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-score_winner &lt;-<span class="st"> </span><span class="cf">function</span>(race)  {
-  score &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/array">array</a></span>(<span class="dv">0</span>,<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(race))
-  winner &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(race)
-  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(race))  {
-    <span class="cf">if</span> (race[i] <span class="op">==</span><span class="st"> </span>winner) score[i] &lt;-<span class="st"> </span><span class="dv">1</span>
-  }
-  score
-}
-
-wins &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/array">array</a></span>(<span class="dv">0</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(record))
-
-
-<span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_len</a></span>(n))  {
-  wins[i, ] &lt;-<span class="st"> </span><span class="kw">score_winner</span>(record[i, ])
-}
-
-win_rec &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(wins, <span class="dv">2</span>, sum)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(win_rec) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'Lucky'</span>, <span class="st">'Abbott'</span>, <span class="st">'Costello'</span>, <span class="st">'Arnold'</span>, <span class="st">'Rudy'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(win_rec)
-<span class="co">#&gt;    Lucky   Abbott Costello   Arnold     Rudy </span>
-<span class="co">#&gt;     4169      842     1083     2271     1635</span></code></pre></div>
-</div>
-<div id="scoring-race-performance" class="section level2">
-<h2 class="hasAnchor">
-<a href="#scoring-race-performance" class="anchor"></a>Scoring Race Performance</h2>
-<p>Converting the raw race effort a horse puts into a race into an official race score requires an additional step. For horses like Abbott and Rudy, it is possible to have net negative race effort, when a negative heart value outweighs their low strength. However, during an actual race the horse cannot do worse than zero, even if they are having a bad day on in the inside.</p>
-<p>The following code snippet copies the race effort record into a variable called <code>score</code>, then changes any values in <code>score</code> below zero to zero.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-score &lt;-<span class="st"> </span>record
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(score) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'Lucky'</span>, <span class="st">'Abbott'</span>, <span class="st">'Costello'</span>, <span class="st">'Arnold'</span>, <span class="st">'Rudy'</span>)
-
-<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">ncol</a></span>(score))  {
-  score[score[ , i] <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span>, i] &lt;-<span class="st"> </span><span class="dv">0</span> 
-}</code></pre></div>
-<p>In this example, 20% of Abbott’s scores fell below zero and were truncated, whereas half of Rudy’s scores fell below zero.</p>
-</div>
-<div id="truncation-issues" class="section level2">
-<h2 class="hasAnchor">
-<a href="#truncation-issues" class="anchor"></a>Truncation Issues</h2>
-<p>In the example above, truncation occurs at the time of sampling, after drawing strength and heart values from the distribution of empiric observations for the given horse.</p>
-<p>In the following example, we use the derived race effort PMF for each horse, then truncate and renormalize the PMFs by defining two utility functions, <code>normalize</code> and <code>trunc_0</code>. The function <code>trunc_norm</code> is a wrapper for <code>normalize</code> and <code>trunc_0</code>, to reduce the operation to a single function call, in order to pass the call to <code>lapply</code>.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-normalize &lt;-<span class="st"> </span><span class="cf">function</span>(probs)  {
-  norm &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/array">array</a></span>(<span class="dv">0</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(probs))
-  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(probs))  {
-    norm[i] &lt;-<span class="st"> </span>probs[i] <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(probs)
-  }
-  norm
-}
-
-trunc_<span class="dv">0</span> &lt;-<span class="st"> </span><span class="cf">function</span>(pmf, index)  {
-  trunc &lt;-<span class="st"> </span>pmf
-  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(index))  {
-    <span class="cf">if</span> (index[i] <span class="op">&lt;</span><span class="st"> </span><span class="dv">0</span>)  trunc[i] &lt;-<span class="st"> </span><span class="dv">0</span>
-  }
-  trunc
-}
-
-trunc_norm &lt;-<span class="st"> </span><span class="cf">function</span>(pmf, <span class="dt">index =</span> ys)  {
-  <span class="kw"><a href="../reference/normalize.html">normalize</a></span>(<span class="kw"><a href="../reference/trunc_0.html">trunc_0</a></span>(pmf, ys))
-}
-
-stable_eff &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">lucky =</span> luck_eff,
-                   <span class="dt">abbott =</span> abb_eff,
-                   <span class="dt">costello =</span> cos_eff,
-                   <span class="dt">arnold =</span> arn_eff,
-                   <span class="dt">rudy =</span> rud_eff)
-
-stable_trunc &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(stable_eff, <span class="cf">function</span>(a) <span class="kw"><a href="../reference/trunc_norm.html">trunc_norm</a></span>(a))</code></pre></div>
-<div id="synthetic-obs-from-a-derived-pmf" class="section level3">
-<h3 class="hasAnchor">
-<a href="#synthetic-obs-from-a-derived-pmf" class="anchor"></a>Synthetic Obs from a Derived PMF</h3>
-<p>Previously, to create a race record we could sample from the empiric pool of observations for each horse. For the PMF we can create a sythetic event space where the observer sampling at random has a chance of selecting a given value from the event space equivalent to the relative probability of that value occurring in the PMF.</p>
-<p>The function <code>draw_event_space</code> uses the <code>scale</code> parameter to create a sample space of sufficient size to capture the variability in the PMF.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-draw_event_space &lt;-<span class="st"> </span><span class="cf">function</span>(pmf, index, <span class="dt">scale=</span><span class="dv">10000</span>)  {
-  probs &lt;-<span class="st"> </span>pmf[pmf<span class="op">&gt;</span><span class="dv">0</span>]
-  vals &lt;-<span class="st"> </span>index[pmf<span class="op">&gt;</span><span class="dv">0</span>]
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/mapply">mapply</a></span>(<span class="cf">function</span>(a,b,c) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(a,b<span class="op">*</span>c), 
-          <span class="dt">a =</span> vals, <span class="dt">b =</span> probs, <span class="dt">MoreArgs =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/list">list</a></span>(<span class="dt">c=</span>scale)))
-}
-
-stable_obs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(stable_trunc, <span class="cf">function</span>(a, b) <span class="kw">draw_event_space</span>(a, b), <span class="dt">b =</span> ys)</code></pre></div>
-<p>Bootstrapping race results using synthetic observations from derived race effort PMFs than directly from observed heart and strength values, since we can sample from a single pool rather than two. We can also reuse the <code>score_winner</code> function to quickly produce win results using the truncated and normalized PMFs.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-trunc_boot &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/matrix">matrix</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(
-                    <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(stable_obs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sample">sample</a></span>(a, n, <span class="dt">rep=</span>T))), <span class="dt">ncol=</span><span class="dv">5</span>)
-
-
-trunc_wins &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/array">array</a></span>(<span class="dv">0</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/dim">dim</a></span>(trunc_boot))
-
-<span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_len</a></span>(n))  {
-  trunc_wins[i, ] &lt;-<span class="st"> </span><span class="kw">score_winner</span>(trunc_boot[i, ])
-}
-
-trunc_win_rec &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(trunc_wins, <span class="dv">2</span>, sum)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(trunc_win_rec) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'Lucky'</span>, <span class="st">'Abbott'</span>, <span class="st">'Costello'</span>, <span class="st">'Arnold'</span>, <span class="st">'Rudy'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(trunc_win_rec)
-<span class="co">#&gt;    Lucky   Abbott Costello   Arnold     Rudy </span>
-<span class="co">#&gt;     3724     1059      880     1596     2846</span></code></pre></div>
-<p>Note that we have entered a topsy-turvy world where Rudy beats Arnold and Abbott is faster than Costello.</p>
-<p>Races where the horse puts forth negative effort are races where the horse loses. By truncating and renormalizing the race effort PMF at zero, we have subset from all races those where the horse had a good enough day to put forth positive effort. By racing horses using synthetic observations drawn from these truncated PMFs, we have asked how race results would be if each horse in the stable only had good days. Note the comparison between untruncated and truncated CDFs below:</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-cdfs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(score, <span class="dv">2</span>, staTools<span class="op">::</span>cdf)
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(cdfs[[<span class="dv">5</span>]], <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'lightseagreen'</span>, <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">1</span>),
-     <span class="dt">main =</span> <span class="st">'CDF of Race Score'</span>, <span class="dt">xlab =</span> <span class="st">'Race Score'</span>,
-     <span class="dt">sub =</span> <span class="st">'Untruncated'</span>,
-     <span class="dt">ylab =</span> <span class="st">'Prop. of Sample at or below X'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(cdfs[[<span class="dv">1</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(cdfs[[<span class="dv">2</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'red'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(cdfs[[<span class="dv">3</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(cdfs[[<span class="dv">4</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'goldenrod'</span>)
-<span class="co">#legend('bottomright', legend=c('Lucky', 'Abbott', 'Costello', 'Arnold', 'Rudy'),</span>
-<span class="co">#       fill=c('forestgreen','red','slateblue','goldenrod','lightseagreen'))</span>
-
-
-trunc_cdfs &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(stable_obs, staTools<span class="op">::</span>cdf)
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(trunc_cdfs[[<span class="dv">5</span>]], <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'lightseagreen'</span>, <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">1</span>),
-     <span class="dt">main =</span> <span class="st">'CDF of Race Score'</span>, <span class="dt">xlab =</span> <span class="st">'Race Score'</span>,
-     <span class="dt">sub =</span> <span class="st">'Truncated'</span>,
-     <span class="dt">ylab =</span> <span class="st">'Prop. of Sample at or below X'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(trunc_cdfs[[<span class="dv">1</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(trunc_cdfs[[<span class="dv">2</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'red'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(trunc_cdfs[[<span class="dv">3</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(trunc_cdfs[[<span class="dv">4</span>]], <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'goldenrod'</span>)</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-16-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-16-2.png" width="700"></p>
-<p>Another way to think of it is that race effort can be negative but the race score can only go down to zero. If a race effort PMF has a distribution including negative and positive values, it will have a lower mean than the official score PMF for the same horse, because all negative results from the race effort PMF are truncated at zero in the official score.</p>
-<p>The code snippet below prints the mean race score truncated at zero at the time of the race, vs. truncating the race effort PMF directly before bootstrapping race results.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-trunc_score &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(score, <span class="dv">2</span>, mean)
-trunc_pmf &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(trunc_boot, <span class="dv">2</span>, mean)
-horses &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'Lucky'</span>, <span class="st">'Abbott'</span>, <span class="st">'Costello'</span>, <span class="st">'Arnold'</span>, <span class="st">'Rudy'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(trunc_score) &lt;-<span class="st"> </span>horses
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/names">names</a></span>(trunc_pmf) &lt;-<span class="st"> </span>horses
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(trunc_score)
-<span class="co">#&gt;     Lucky    Abbott  Costello    Arnold      Rudy </span>
-<span class="co">#&gt; 12.113400  4.879873  8.494256 10.498949  5.580452</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(trunc_pmf)
-<span class="co">#&gt;    Lucky   Abbott Costello   Arnold     Rudy </span>
-<span class="co">#&gt; 12.18240  6.94518  8.59346 10.53497  9.84299</span></code></pre></div>
-</div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'rank list matches family ids'</span>, {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(df_by_ranks, df_by_count)
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(ff_by_ranks, ff_by_count)
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(fg_by_ranks, fg_by_count)
+})</code></pre></div>
 </div>
   </div>
 
@@ -493,17 +233,9 @@ horses &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocu
 <a href="#tocnav" class="anchor"></a>Contents</h2>
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#introduction-to-muddier">Introduction to <code>muddier</code></a></li>
-      <li><a href="#horse-trading">Horse Trading</a></li>
-      <li><a href="#first-purchase">First Purchase</a></li>
-      <li><a href="#horseshoe-strapping">Horseshoe-strapping</a></li>
-      <li><a href="#deriving-pmfs-using-muddier">Deriving pmfs using <code>muddier</code></a></li>
-      <li><a href="#convolution-using-convo_add">Convolution using <code><a href="--/reference/convo_add-html">convo_add()</a></code></a></li>
-      <li><a href="#mean-race-effort">Mean Race Effort</a></li>
-      <li><a href="#an-example-stable">An Example Stable</a></li>
-      <li><a href="#mean-stable-race-effort">Mean Stable Race Effort</a></li>
-      <li><a href="#official-race-record">Official Race Record</a></li>
-      <li><a href="#scoring-race-performance">Scoring Race Performance</a></li>
-      <li><a href="#truncation-issues">Truncation Issues</a></li>
+      <li><a href="#charcoal-data">Charcoal Data</a></li>
+      <li><a href="#subsetting-sites-by-family-and-facies">Subsetting sites by family and facies</a></li>
+      <li><a href="#inherited-age">Inherited Age</a></li>
       </ul>
 </div>
       </div>
