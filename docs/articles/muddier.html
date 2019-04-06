@@ -162,9 +162,9 @@ ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocume
 })</code></pre></div>
 <p>Note that the pmfs will not sum exactly to one due to rounding error. First I examine the maximum size of the rounding error with <code><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max(sums-ones)</a></code>. I explictly set <code>tolerance = 1e-4</code> to ingore this rounding error. Having passed the initial round of tests, I am confident the two datasets are correctly ordered and match, and we can proceed to calculate inherited age.</p>
 </div>
-<div id="subsetting-sites-by-family-and-facies" class="section level2">
+<div id="subsetting-sites" class="section level2">
 <h2 class="hasAnchor">
-<a href="#subsetting-sites-by-family-and-facies" class="anchor"></a>Subsetting sites by family and facies</h2>
+<a href="#subsetting-sites" class="anchor"></a>Subsetting sites</h2>
 <p><code>charcoal</code> is organized as a data.table to enable simple subsetting operations by the user. The convenient <code>.N</code> term for delineating number of observations is convenient for producing summary statistics, when combined with <code>by</code> indicated the variable for which to count observations. The data.table format allows the user to treat column names as variables when inside brackets, so subsetting a data.table using a logical test is as straightforward as <code>charcoal[facies == 'DF']</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/library">library</a></span>(data.table)
 
@@ -200,6 +200,7 @@ fg_count[N<span class="op">&gt;</span><span class="dv">3</span>]
 <a href="#inherited-age" class="anchor"></a>Inherited Age</h2>
 <p>Inherited age is the age of the charcoal before becoming entrained in bank deposits. By taking multiple samples of a facies type at a single sampling site, Lancaster &amp; Casebeer (2007) were able to estimate a distribution range around inherited age.</p>
 <p><code>charcoal</code> is intentionally sorted by rank so that an index of ranks is equivalent to the index of observations by row. Furthermore, the rank number of a sample from <code>charcoal</code> is equivalent to row number of the pmf for the same sample in <code>char_pmfs</code>. Rather than searching by site_id, I have elected to use rank number, and so the function <code><a href="../reference/rank_list.html">rank_list(ftype, dat = charcoal, min_count = 3)</a></code> returns the ranks of observations of a given facies type from <code>dat</code> above a minimum count <code>min_count</code>, with <code>dat</code> set to the charcoal data as a default, and minimum count set to 3.</p>
+<p>The concluding test in the snippet tells me that the ranks returned by the function <code><a href="../reference/rank_list.html">rank_list()</a></code> have the same family ids as the subsets in the previous example.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 df_ranks &lt;-<span class="st"> </span><span class="kw"><a href="../reference/rank_list.html">rank_list</a></span>(<span class="st">'DF'</span>)
 ff_ranks &lt;-<span class="st"> </span><span class="kw"><a href="../reference/rank_list.html">rank_list</a></span>(<span class="st">'FF'</span>)
@@ -224,7 +225,6 @@ fg_by_count &lt;-<span class="st"> </span>fg_count[N<span class="op">&gt;</span>
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(ff_by_ranks, ff_by_count)
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(fg_by_ranks, fg_by_count)
 })</code></pre></div>
-<p>The concluding test in the snippet tells me that the ranks returned by the function <code><a href="../reference/rank_list.html">rank_list()</a></code> have the same family ids as the subsets in the previous example.</p>
 <p>I can examine the pmfs associated with a rank list using the function <code><a href="../reference/pmf_by_rank.html">pmf_by_rank(ranks, pmfs = char_pmfs)</a></code>. Because the default argument for <code>pmfs</code> is set to <code>char_pmfs</code>, this second argument can be ommitted in this instance. When passed a vector of ranks to the first argument <code>ranks</code>, <code>pmf_by_rank</code> returns a data.table with pmfs for each rank stored by row, with probabilities stored in columns and year values stored as column names.</p>
 <p>When passed a list of rank vectors, as output by <code>rank_list</code>, to the first argument <code>ranks</code>, <code>pmf_by_rank</code> returns a list of data.tables, each containing the pmfs associated with ranks in the rank list, with probabiliites stored in column and year values stored as column names.</p>
 <p>To test the functionality of <code>pmf_by_rank</code>, I am mostly concerned that I have inadvertently scrambled the pmfs. I am already highly confident the rows of both datasets match, and the pmfs sum to 1, so now I would like to ensure they are ordered within each family from youngest to oldest.</p>
@@ -233,12 +233,14 @@ df_pmfs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pmf
 ff_pmfs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pmf_by_rank.html">pmf_by_rank</a></span>(ff_ranks)
 fg_pmfs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pmf_by_rank.html">pmf_by_rank</a></span>(fg_ranks)
 
-df_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(df_pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a),
-                                             <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
-ff_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(ff_pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a),
-                                             <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
-fg_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(fg_pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a),
-                                             <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
+<span class="co"># list wrapper for weighted.mean</span>
+get_means &lt;-<span class="st"> </span><span class="cf">function</span>(pmfs, years)  {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a), <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
+}
+
+df_mns &lt;-<span class="st"> </span><span class="kw">get_means</span>(df_pmfs, years)
+ff_mns &lt;-<span class="st"> </span><span class="kw">get_means</span>(ff_pmfs, years)
+fg_mns &lt;-<span class="st"> </span><span class="kw">get_means</span>(fg_pmfs, years)
 
 <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'pmfs are sorted in ascending age'</span>, {
   <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(df_mns))  {
@@ -251,6 +253,85 @@ fg_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocu
     <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(fg_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(fg_mns[[i]])))
   }
 })</code></pre></div>
+<div id="convolving-ages" class="section level3">
+<h3 class="hasAnchor">
+<a href="#convolving-ages" class="anchor"></a>Convolving Ages</h3>
+<p>If we are trying to characterize the distribution of inherited ages from the range of age distributions at a particular site, we can reason that the charcoal in the samples was no older than the youngest piece of charcoal in the set when the samples became entrained as a bank deposit, simply because the youngest sample had to become charcoal before becoming a bank deposit. By this logic, we can characterize the distribution of inherited ages a given site by subtracting the youngest age distribution from the age distribution of each sample via convolution.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+
+df_cl &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_list.html">convo_list</a></span>(df_ranks)
+<span class="co">#&gt; Warning in convo_list(df_ranks): NAs introduced by coercion</span>
+ff_cl &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_list.html">convo_list</a></span>(ff_ranks)
+<span class="co">#&gt; Warning in convo_list(ff_ranks): NAs introduced by coercion</span>
+fg_cl &lt;-<span class="st"> </span><span class="kw"><a href="../reference/convo_list.html">convo_list</a></span>(fg_ranks)
+<span class="co">#&gt; Warning in convo_list(fg_ranks): NAs introduced by coercion</span>
+
+<span class="co"># slight variation on list wrapper</span>
+pmf_means &lt;-<span class="st"> </span><span class="cf">function</span>(pmfs, years)  {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(a, <span class="cf">function</span>(b) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), b)))
+}
+
+
+<span class="co"># although my system issued an NA warning</span>
+<span class="co"># a brute force screen shows no NAs produced</span>
+screen_for_NAs &lt;-<span class="st"> </span><span class="cf">function</span>(cl)  {
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(cl))  {
+    site &lt;-<span class="st"> </span>cl[[i]]
+    <span class="cf">for</span> (j <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(site))  {
+      ob &lt;-<span class="st"> </span>site[[j]]
+      <span class="cf">for</span> (k <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(ob))  {
+        <span class="cf">if</span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/NA">is.na</a></span>(ob[k])) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/print">print</a></span>(i, j, k)
+      }
+    }
+  }
+}
+
+<span class="kw">screen_for_NAs</span>(df_cl)
+<span class="kw">screen_for_NAs</span>(ff_cl)
+<span class="kw">screen_for_NAs</span>(fg_cl)
+
+dfc_mns &lt;-<span class="st"> </span><span class="kw">pmf_means</span>(df_cl, years)
+ffc_mns &lt;-<span class="st"> </span><span class="kw">pmf_means</span>(ff_cl, years)
+fgc_mns &lt;-<span class="st"> </span><span class="kw">pmf_means</span>(fg_cl, years)
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'convolved pmfs are sorted in ascending age'</span>, {
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(dfc_mns))  {
+    <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(dfc_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(dfc_mns[[i]])))
+  }
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(ffc_mns))  {
+    <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(ffc_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(ffc_mns[[i]])))
+  }
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(fgc_mns))  {
+    <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(fgc_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(fgc_mns[[i]])))
+  }
+})
+
+<span class="co"># because we convolved the pmfs, check that they sum to 1</span>
+get_sums &lt;-<span class="st"> </span><span class="cf">function</span>(pmfs)  {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(pmfs, <span class="dv">2</span>, sum)
+}
+
+list_sums &lt;-<span class="st"> </span><span class="cf">function</span>(pmfs)  {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(pmfs, get_sums) <span class="op">%&gt;%</span><span class="st"> </span>unlist <span class="op">%&gt;%</span><span class="st"> </span>as.numeric
+}
+
+dfc_sums &lt;-<span class="st"> </span><span class="kw">list_sums</span>(df_cl)
+dfc_ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(dfc_sums))
+<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(dfc_sums<span class="op">-</span>dfc_ones)  <span class="co"># examine tolerance</span>
+<span class="co">#&gt; [1] 3.542853e-05</span>
+
+ffc_sums &lt;-<span class="st"> </span><span class="kw">list_sums</span>(ff_cl)
+ffc_ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(ffc_sums))
+
+fgc_sums &lt;-<span class="st"> </span><span class="kw">list_sums</span>(fg_cl)
+fgc_ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(fgc_sums))
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'pmfs in char_pmfs sum to 1'</span>, {
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(dfc_sums, dfc_ones, <span class="dt">tolerance =</span> <span class="fl">1e-4</span>)
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(ffc_sums, ffc_ones, <span class="dt">tolerance =</span> <span class="fl">1e-4</span>)
+  <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(fgc_sums, fgc_ones, <span class="dt">tolerance =</span> <span class="fl">1e-4</span>)
+})</code></pre></div>
+</div>
 </div>
   </div>
 
@@ -261,7 +342,7 @@ fg_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocu
       <ul class="nav nav-pills nav-stacked">
 <li><a href="#introduction-to-muddier">Introduction to <code>muddier</code></a></li>
       <li><a href="#charcoal-data">Charcoal Data</a></li>
-      <li><a href="#subsetting-sites-by-family-and-facies">Subsetting sites by family and facies</a></li>
+      <li><a href="#subsetting-sites">Subsetting sites</a></li>
       <li><a href="#inherited-age">Inherited Age</a></li>
       </ul>
 </div>
