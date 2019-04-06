@@ -24,6 +24,7 @@ The package \code{muddier} is inspired by the field of fluvial geomorphology.  C
 
 ## Charcoal Data
 
+
 The `muddier` package includes data from Lancaster & Casebeer (2007) on charcoal samples taken from bank stratigraphy adjacent to headwater streams in the OCR.  The table `charcoal` contains site data from the field surveys where they collected the charcoal samples.  The table `char_pmfs` is the radiocarbon age distribution associated with each sample.  To load the data, you can use the `data` function, or simply type `library(muddier)`.
 
 ```{r}
@@ -142,6 +143,44 @@ test_that('rank list matches family ids', {
 })
 
 ```
+
+The `muddier` package includes data from Lancaster & Casebeer (2007) on charcoal samples taken from bank stratigraphy adjacent to headwater streams in the OCR.  The table `charcoal` contains site data from the field surveys where they collected the charcoal samples.  The table `char_pmfs` is the radiocarbon age distribution associated with each sample.  To load the data, use the `data` function.
+
+```{r}
+# load package data
+data(charcoal, package = 'muddier')
+data(char_pmfs, package = 'muddier')
+
+# inspect charcoal table
+head(charcoal)
+
+# compare dimensions of objects
+dim(charcoal)
+dim(char_pmfs)
+```
+
+Both `charcoal` and `char_pmfs` has 370 observations stored as rows.  The columns of `charcoal` contain site data from the survey, whereas the column names in `char_pmf` represent the year, and the value in the column is the probability that an observation's age is the age of the column name.  The observations have been ordered by mean sample age.  We can test that the two tables are properly sorted by comparing their rownames and their weighted means.
+
+```{r}
+library(testthat)
+library(magrittr)
+
+years <- char_pmfs %>% colnames %>% as.numeric
+mns <- apply(char_pmfs, 1, function(a) weighted.mean(years, a))
+
+
+test_that('charcoal and char_pmfs match', {
+  expect_equal(rownames(charcoal), rownames(char_pmfs))
+  expect_equal(charcoal$mn, mns)
+  })
+```
+
+
+
+
+
+
+
 
 
 
