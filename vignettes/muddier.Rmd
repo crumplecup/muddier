@@ -160,9 +160,14 @@ df_pmfs <- pmf_by_rank(df_ranks)
 ff_pmfs <- pmf_by_rank(ff_ranks)
 fg_pmfs <- pmf_by_rank(fg_ranks)
 
-df_mns <- lapply(df_pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
-ff_mns <- lapply(ff_pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
-fg_mns <- lapply(fg_pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
+# list wrapper for weighted.mean
+get_means <- function(pmfs, years)  {
+  lapply(pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
+}
+
+df_mns <- get_means(df_pmfs, years)
+ff_mns <- get_means(ff_pmfs, years)
+fg_mns <- get_means(fg_pmfs, years)
 
 test_that('pmfs are sorted in ascending age', {
   for (i in seq_along(df_mns))  {
@@ -187,11 +192,76 @@ If we are trying to characterize the distribution of inherited ages from the ran
 
 ```{r}
 
-df_cl <- convo_lis(df_ranks)
 
-dfc_mns <- lapply(df_cl, function(a) lapply(a, function(b) weighted.mean(sort(years), b)))
+df_cl <- convo_list(df_ranks)
+ff_cl <- convo_list(ff_ranks)
+fg_cl <- convo_list(fg_ranks)
 
-#dfc_mns
+# slight variation on list wrapper
+pmf_means <- function(pmfs, years)  {
+  lapply(pmfs, function(a) lapply(a, function(b) weighted.mean(sort(years), b)))
+}
+
+
+# although my system issued an NA warning
+# a brute force screen shows no NAs produced
+screen_for_NAs <- function(cl)  {
+  for (i in seq_along(cl))  {
+    site <- cl[[i]]
+    for (j in seq_along(site))  {
+      ob <- site[[j]]
+      for (k in seq_along(ob))  {
+        if(is.na(ob[k])) print(i, j, k)
+      }
+    }
+  }
+}
+
+screen_for_NAs(df_cl)
+screen_for_NAs(ff_cl)
+screen_for_NAs(fg_cl)
+
+dfc_mns <- pmf_means(df_cl, years)
+ffc_mns <- pmf_means(ff_cl, years)
+fgc_mns <- pmf_means(fg_cl, years)
+
+test_that('convolved pmfs are sorted in ascending age', {
+  for (i in seq_along(dfc_mns))  {
+    expect_equal(as.numeric(dfc_mns[[i]]), sort(as.numeric(dfc_mns[[i]])))
+  }
+  for (i in seq_along(ffc_mns))  {
+    expect_equal(as.numeric(ffc_mns[[i]]), sort(as.numeric(ffc_mns[[i]])))
+  }
+  for (i in seq_along(fgc_mns))  {
+    expect_equal(as.numeric(fgc_mns[[i]]), sort(as.numeric(fgc_mns[[i]])))
+  }
+})
+
+# because we convolved the pmfs, check that they sum to 1
+get_sums <- function(pmfs)  {
+  apply(pmfs, 2, sum)
+}
+
+list_sums <- function(pmfs)  {
+  lapply(pmfs, get_sums) %>% unlist %>% as.numeric
+}
+
+dfc_sums <- list_sums(df_cl)
+dfc_ones <- rep(1, length(dfc_sums))
+max(dfc_sums-dfc_ones)  # examine tolerance
+
+ffc_sums <- list_sums(ff_cl)
+ffc_ones <- rep(1, length(ffc_sums))
+
+fgc_sums <- list_sums(fg_cl)
+fgc_ones <- rep(1, length(fgc_sums))
+
+test_that('pmfs in char_pmfs sum to 1', {
+  expect_equal(dfc_sums, dfc_ones, tolerance = 1e-4)
+  expect_equal(ffc_sums, ffc_ones, tolerance = 1e-4)
+  expect_equal(fgc_sums, fgc_ones, tolerance = 1e-4)
+})
+
 ```
 
 

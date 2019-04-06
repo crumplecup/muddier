@@ -7,9 +7,9 @@
 convo(x, y, index)
 }
 \arguments{
-\item{x}{is a numeric vector (younger pmf)}
+\item{x}{is a numeric vector (older pmf)}
 
-\item{y}{is a numeric vector (older pmf)}
+\item{y}{is a numeric vector (younger pmf)}
 
 \item{index}{is a numeric vector (years)}
 }

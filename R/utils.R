@@ -41,8 +41,8 @@ build_mats <- function(x,y)  {
 #' Given two pmfs and an age vector, returns the derived pmf of the convolution y-x.
 #' Lengths of x,y and index must be equal.
 #'
-#' @param x is a numeric vector (younger pmf)
-#' @param y is a numeric vector (older pmf)
+#' @param x is a numeric vector (older pmf)
+#' @param y is a numeric vector (younger pmf)
 #' @param index is a numeric vector (years)
 #' @return a length(index) numeric vector of the convolved distribution of y-x
 #' @seealso convo_minus
@@ -88,6 +88,22 @@ convo_lis <- function(lis, pmfs = char_pmfs)  {
   lapply(lis, function(a,b) convo_ranks(a, b), b = pmfs)
 }
 
+
+#' convo list
+#'
+#' convolves pmfs by rank list
+#'
+#' @param ranks is a vector of ranks or list of rank vectors
+#' @param pmfs is a matrix with rows obs and cols probs
+#' @return convolved pmfs by subtraction
+#' @export
+
+convo_list <- function(ranks, pmfs = char_pmfs)  {
+  index <- as.numeric(rownames(char_pmfs))
+  rank_pmfs <- pmf_by_rank(ranks, pmfs)
+  cpmfs <- lapply(rank_pmfs, function(a)
+    setDT(lapply(1:nrow(a), function(b, c) convo(c[b,], c[1,], years), c = a)))
+}
 
 
 convo_lis1 <- function(lis, dat, vec)  {
@@ -181,7 +197,7 @@ convo_ranks <- function(vec, pmfs = char_pmfs)  {
   mclapply(seq_along(vec), function(a)
     mclapply(seq_along(a[[1]]), function(b)
       lapply(b, function(c)
-        convo(pmfs[vec[[a]][[b]][1],],pmfs[vec[[a]][[b]][c],], index))) %>% unlist) %>% setDT
+        convo(pmfs[vec[[a]][[b]][c],],pmfs[vec[[a]][[b]][1],], index))) %>% unlist) %>% setDT
 }
 
 
