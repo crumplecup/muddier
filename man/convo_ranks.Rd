@@ -7,9 +7,9 @@
 convo_ranks(vec, pmfs = char_pmfs)
 }
 \arguments{
-\item{vec}{is a list of numeric sorted ranks}
+\item{vec}{is a vector of sorted numeric ranks}
 
-\item{pmfs}{is a matrix of pmfs rows with cols of obs sorted by rank}
+\item{pmfs}{is a matrix of pmfs with rows of obs by rank and cols of probs}
 }
 \value{
 a matrix of pmfs convolved by subtracting pmf of lowest rank from pmfs

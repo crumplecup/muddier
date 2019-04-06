@@ -4,7 +4,7 @@
 \alias{convo_rank}
 \title{convolve by rank}
 \usage{
-convo_rank(ranks, pmfs = char_pmfs, vals = as.numeric(rownames(pmfs)),
+convo_rank(ranks, pmfs = char_pmfs, vals = as.numeric(colnames(pmfs)),
   dat = charcoal)
 }
 \arguments{

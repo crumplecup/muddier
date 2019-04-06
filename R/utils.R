@@ -80,11 +80,11 @@ convo_add <- function(x,y,index)    {
 #' returns a list of convolved `pmfs` with ranks in `lis`
 #'
 #' @param lis is a list of integer ranks
-#' @param pmfs is a matrix of pmfs with rownames(vals) (charcoal ages)
+#' @param pmfs is a matrix of pmfs with colnames(vals) (charcoal ages)
 #' @return a list of convolved `pmfs` with ranks in `lis`
+#' @export
 
 convo_lis <- function(lis, pmfs = char_pmfs)  {
-  index <- as.numeric(rownames(pmfs))
   lapply(lis, function(a,b) convo_ranks(a, b), b = pmfs)
 }
 
@@ -150,13 +150,13 @@ convo_plus <- function(x,y)  {
 #' @return pmfs of ranks convolved by subtracting youngest from each
 convo_rank <- function(ranks,
                        pmfs = char_pmfs,
-                       vals = as.numeric(rownames(pmfs)),
+                       vals = as.numeric(colnames(pmfs)),
                        dat = charcoal)  {
   ranks <- sort(ranks)
-  young <- pmfs[, colnames(pmfs) == dat[rank == ranks[1], site_id]]
-  ar <- array(0,c(nrow(pmfs), length(ranks)))
+  young <- pmfs[rownames(pmfs) == dat[rank == ranks[1], site_id],]
+  ar <- array(0,c(ncol(pmfs), length(ranks)))
   for (i in seq_along(ranks))  {
-    vec <- pmfs[, colnames(pmfs) == dat[rank == ranks[i], site_id]]
+    vec <- pmfs[rownames(pmfs) == dat[rank == ranks[i], site_id], ]
     ar[,i] <- convo(young, vec, vals)
   }
   ar
@@ -169,19 +169,19 @@ convo_rank <- function(ranks,
 #' subtracts the pmf with first rank in `vec` from pmfs with ranks in `vec`
 #' via convolution
 #'
-#' @param vec is a list of numeric sorted ranks
-#' @param pmfs is a matrix of pmfs rows with cols of obs sorted by rank
+#' @param vec is a vector of sorted numeric ranks
+#' @param pmfs is a matrix of pmfs with rows of obs by rank and cols of probs
 #' @return a matrix of pmfs convolved by subtracting pmf of lowest rank from pmfs
 #'   with ranks in `vec`
 #' @import magrittr
 #' @export
 
 convo_ranks <- function(vec, pmfs = char_pmfs)  {
-  index <- as.numeric(rownames(pmfs))
+  index <- as.numeric(colnames(pmfs))
   mclapply(seq_along(vec), function(a)
     mclapply(seq_along(a[[1]]), function(b)
       lapply(b, function(c)
-        convo(pmfs[,vec[[a]][[b]][c]],pmfs[,vec[[a]][[b]][1]], index))) %>% unlist) %>% setDT
+        convo(pmfs[vec[[a]][[b]][1],],pmfs[vec[[a]][[b]][c],], index))) %>% unlist) %>% setDT
 }
 
 

@@ -160,12 +160,9 @@ df_pmfs <- pmf_by_rank(df_ranks)
 ff_pmfs <- pmf_by_rank(ff_ranks)
 fg_pmfs <- pmf_by_rank(fg_ranks)
 
-df_mns <- lapply(df_pmfs, function(a) lapply(1:nrow(a),
-                                             function(b, c) weighted.mean(years, c[b,]), c = a))
-ff_mns <- lapply(ff_pmfs, function(a) lapply(1:nrow(a),
-                                             function(b, c) weighted.mean(years, c[b,]), c = a))
-fg_mns <- lapply(fg_pmfs, function(a) lapply(1:nrow(a),
-                                             function(b, c) weighted.mean(years, c[b,]), c = a))
+df_mns <- lapply(df_pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
+ff_mns <- lapply(ff_pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
+fg_mns <- lapply(fg_pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
 
 test_that('pmfs are sorted in ascending age', {
   for (i in seq_along(df_mns))  {
@@ -182,7 +179,20 @@ test_that('pmfs are sorted in ascending age', {
 ```
 
 
+### Convolving Ages
 
+If we are trying to characterize the distribution of inherited ages from the range of age distributions at a particular site, we can reason that the charcoal in the samples was no older than the youngest piece of charcoal in the set when the samples became entrained as a bank deposit, simply because the youngest sample had to become charcoal before becoming a bank deposit.  By this logic, we can characterize the distribution of inherited ages a given site by subtracting the youngest age distribution from the age distribution of each sample via convolution.
+
+
+
+```{r}
+
+df_cl <- convo_lis(df_ranks)
+
+dfc_mns <- lapply(df_cl, function(a) lapply(a, function(b) weighted.mean(sort(years), b)))
+
+#dfc_mns
+```
 
 
 
