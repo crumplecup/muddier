@@ -92,11 +92,7 @@ test_that('pmfs in char_pmfs sum to 1', {
 Note that the pmfs will not sum exactly to one due to rounding error.  First I examine the maximum size of the rounding error with `max(sums-ones)`.  I explictly set `tolerance = 1e-4` to ingore this rounding error.  Having passed the initial round of tests, I am confident the two datasets are correctly ordered and match, and we can proceed to calculate inherited age.
 
 
-<<<<<<< HEAD
 ## Subsetting sites
-=======
-## Subsetting sites by family and facies
->>>>>>> e8abb4c20cf9dd6905965484e2b0b08aa30282b8
 
 `charcoal` is organized as a data.table to enable simple subsetting operations by the user.  The convenient `.N` term for delineating number of observations is convenient for producing summary statistics, when combined with `by` indicated the variable for which to count observations.  The data.table format allows the user to treat column names as variables when inside brackets, so subsetting a data.table using a logical test is as straightforward as `charcoal[facies == 'DF']`.
 
