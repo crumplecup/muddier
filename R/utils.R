@@ -274,7 +274,7 @@ normalize <- function(probs)  {
 #' @export
 
 pmf_by_rank <- function(ranks, pmfs = char_pmfs)  {
-  lapply(ranks, function(a,b) b[,a], b = pmfs)
+  lapply(ranks, function(a,b) b[a,], b = pmfs)
 }
 
 

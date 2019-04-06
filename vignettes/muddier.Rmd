@@ -144,46 +144,40 @@ test_that('rank list matches family ids', {
 
 ```
 
-The `muddier` package includes data from Lancaster & Casebeer (2007) on charcoal samples taken from bank stratigraphy adjacent to headwater streams in the OCR.  The table `charcoal` contains site data from the field surveys where they collected the charcoal samples.  The table `char_pmfs` is the radiocarbon age distribution associated with each sample.  To load the data, use the `data` function.
+The concluding test in the snippet tells me that the ranks returned by the function `rank_list()` have the same family ids as the subsets in the previous example.  
+
+I can examine the pmfs associated with a rank list using the function `pmf_by_rank(ranks, pmfs = char_pmfs)`.  Because the default argument for `pmfs` is set to `char_pmfs`, this second argument can be ommitted in this instance.  When passed a vector of ranks to the first argument `ranks`, `pmf_by_rank` returns a data.table with pmfs for each rank stored by row, with probabilities stored in columns and year values stored as column names.
+
+When passed a list of rank vectors, as output by `rank_list`, to the first argument `ranks`, `pmf_by_rank` returns a list of data.tables, each containing the pmfs associated with ranks in the rank list, with probabiliites stored in column and year values stored as column names.
+
+To test the functionality of `pmf_by_rank`, I am mostly concerned that I have inadvertently scrambled the pmfs.  I am already highly confident the rows of both datasets match, and the pmfs sum to 1, so now I would like to ensure they are ordered within each family from youngest to oldest.
 
 ```{r}
-# load package data
-data(charcoal, package = 'muddier')
-data(char_pmfs, package = 'muddier')
+# return pmfs by rank
+df_pmfs <- pmf_by_rank(df_ranks)
+ff_pmfs <- pmf_by_rank(ff_ranks)
+fg_pmfs <- pmf_by_rank(fg_ranks)
 
-# inspect charcoal table
-head(charcoal)
+df_mns <- lapply(df_pmfs, function(a) lapply(1:nrow(a), 
+  function(b, c) weighted.mean(years, c[b,]), c = a))
+ff_mns <- lapply(ff_pmfs, function(a) lapply(1:nrow(a), 
+  function(b, c) weighted.mean(years, c[b,]), c = a))
+fg_mns <- lapply(fg_pmfs, function(a) lapply(1:nrow(a), 
+  function(b, c) weighted.mean(years, c[b,]), c = a))
 
-# compare dimensions of objects
-dim(charcoal)
-dim(char_pmfs)
+test_that('pmfs are sorted in ascending age', {
+  for (i in seq_along(df_mns))  {
+    expect_equal(as.numeric(df_mns[[i]]), sort(as.numeric(df_mns[[i]])))
+  }
+  for (i in seq_along(ff_mns))  {
+    expect_equal(as.numeric(ff_mns[[i]]), sort(as.numeric(ff_mns[[i]])))
+  }
+  for (i in seq_along(fg_mns))  {
+    expect_equal(as.numeric(fg_mns[[i]]), sort(as.numeric(fg_mns[[i]])))
+  }
+})
+
 ```
-
-Both `charcoal` and `char_pmfs` has 370 observations stored as rows.  The columns of `charcoal` contain site data from the survey, whereas the column names in `char_pmf` represent the year, and the value in the column is the probability that an observation's age is the age of the column name.  The observations have been ordered by mean sample age.  We can test that the two tables are properly sorted by comparing their rownames and their weighted means.
-
-```{r}
-library(testthat)
-library(magrittr)
-
-years <- char_pmfs %>% colnames %>% as.numeric
-mns <- apply(char_pmfs, 1, function(a) weighted.mean(years, a))
-
-
-test_that('charcoal and char_pmfs match', {
-  expect_equal(rownames(charcoal), rownames(char_pmfs))
-  expect_equal(charcoal$mn, mns)
-  })
-```
-
-
-
-
-
-
-
-
-
-
 
 
 
