@@ -1,9 +1,5 @@
 ---
-<<<<<<< HEAD
 title: 'muddier'
-=======
-  title: 'muddier'
->>>>>>> e8abb4c20cf9dd6905965484e2b0b08aa30282b8
 author: 'Erik Rose'
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
