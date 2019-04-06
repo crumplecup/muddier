@@ -148,7 +148,7 @@ mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumen
 <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'charcoal and char_pmfs match'</span>, {
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(charcoal), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(char_pmfs))
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(charcoal<span class="op">$</span>mn), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(mns))
-  })
+})
 
 
 <span class="co"># test the pmfs sum to 1</span>
@@ -223,6 +223,33 @@ fg_by_count &lt;-<span class="st"> </span>fg_count[N<span class="op">&gt;</span>
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(df_by_ranks, df_by_count)
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(ff_by_ranks, ff_by_count)
   <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(fg_by_ranks, fg_by_count)
+})</code></pre></div>
+<p>The concluding test in the snippet tells me that the ranks returned by the function <code><a href="../reference/rank_list.html">rank_list()</a></code> have the same family ids as the subsets in the previous example.</p>
+<p>I can examine the pmfs associated with a rank list using the function <code><a href="../reference/pmf_by_rank.html">pmf_by_rank(ranks, pmfs = char_pmfs)</a></code>. Because the default argument for <code>pmfs</code> is set to <code>char_pmfs</code>, this second argument can be ommitted in this instance. When passed a vector of ranks to the first argument <code>ranks</code>, <code>pmf_by_rank</code> returns a data.table with pmfs for each rank stored by row, with probabilities stored in columns and year values stored as column names.</p>
+<p>When passed a list of rank vectors, as output by <code>rank_list</code>, to the first argument <code>ranks</code>, <code>pmf_by_rank</code> returns a list of data.tables, each containing the pmfs associated with ranks in the rank list, with probabiliites stored in column and year values stored as column names.</p>
+<p>To test the functionality of <code>pmf_by_rank</code>, I am mostly concerned that I have inadvertently scrambled the pmfs. I am already highly confident the rows of both datasets match, and the pmfs sum to 1, so now I would like to ensure they are ordered within each family from youngest to oldest.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># return pmfs by rank</span>
+df_pmfs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pmf_by_rank.html">pmf_by_rank</a></span>(df_ranks)
+ff_pmfs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pmf_by_rank.html">pmf_by_rank</a></span>(ff_ranks)
+fg_pmfs &lt;-<span class="st"> </span><span class="kw"><a href="../reference/pmf_by_rank.html">pmf_by_rank</a></span>(fg_ranks)
+
+df_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(df_pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a),
+                                             <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
+ff_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(ff_pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a),
+                                             <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
+fg_mns &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(fg_pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(<span class="dv">1</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(a),
+                                             <span class="cf">function</span>(b, c) <span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(years, c[b,]), <span class="dt">c =</span> a))
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/test_that">test_that</a></span>(<span class="st">'pmfs are sorted in ascending age'</span>, {
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(df_mns))  {
+    <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(df_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(df_mns[[i]])))
+  }
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(ff_mns))  {
+    <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(ff_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(ff_mns[[i]])))
+  }
+  <span class="cf">for</span> (i <span class="cf">in</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/seq">seq_along</a></span>(fg_mns))  {
+    <span class="kw"><a href="https://www.rdocumentation.org/packages/testthat/topics/equality-expectations">expect_equal</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(fg_mns[[i]]), <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(fg_mns[[i]])))
+  }
 })</code></pre></div>
 </div>
   </div>
