@@ -68,9 +68,9 @@ char_pmfs <- array(0,dim(npmfs))
 for (i in 1:ncol(npmfs))  {
   char_pmfs[,i] <- npmfs[,names(pmfs) == charcoal$site_id[i]]
 }
-char_pmfs <- as.data.table(t(char_pmfs))
-rownames(char_pmfs) <- charcoal$site_id
-colnames(char_pmfs) <- as.character(years)
+char_pmfs <- as.data.table(char_pmfs)
+colnames(char_pmfs) <- charcoal$site_id
+rownames(char_pmfs) <- as.character(years)
 usethis::use_data(char_pmfs, overwrite = T)
 
 

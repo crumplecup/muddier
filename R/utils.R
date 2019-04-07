@@ -80,7 +80,7 @@ convo_add <- function(x,y,index)    {
 #' returns a list of convolved `pmfs` with ranks in `lis`
 #'
 #' @param lis is a list of integer ranks
-#' @param pmfs is a matrix of pmfs with colnames(vals) (charcoal ages)
+#' @param pmfs is a matrix of pmfs with rownames(vals) (charcoal ages)
 #' @return a list of convolved `pmfs` with ranks in `lis`
 #' @export
 
@@ -94,7 +94,7 @@ convo_lis <- function(lis, pmfs = char_pmfs)  {
 #' convolves pmfs by rank list
 #'
 #' @param ranks is a vector of ranks or list of rank vectors
-#' @param pmfs is a matrix with rows obs and cols probs
+#' @param pmfs is a matrix with cols obs and rows probs
 #' @return convolved pmfs by subtraction
 #' @export
 
@@ -102,7 +102,7 @@ convo_list <- function(ranks, pmfs = char_pmfs)  {
   index <- as.numeric(rownames(char_pmfs))
   rank_pmfs <- pmf_by_rank(ranks, pmfs)
   cpmfs <- lapply(rank_pmfs, function(a)
-    setDT(lapply(1:nrow(a), function(b, c) convo(c[b,], c[1,], years), c = a)))
+    setDT(lapply(a, function(b, c) convo(unlist(b), unlist(c), years), c = a[,1])))
 }
 
 
@@ -290,7 +290,8 @@ normalize <- function(probs)  {
 #' @export
 
 pmf_by_rank <- function(ranks, pmfs = char_pmfs)  {
-  lapply(ranks, function(a,b) b[a,], b = pmfs)
+  mat <- t(pmfs)
+  lapply(ranks, function(a) data.table::as.data.table(t(mat[a,])))
 }
 
 

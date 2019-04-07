@@ -9,7 +9,7 @@ convo_list(ranks, pmfs = char_pmfs)
 \arguments{
 \item{ranks}{is a vector of ranks or list of rank vectors}
 
-\item{pmfs}{is a matrix with rows obs and cols probs}
+\item{pmfs}{is a matrix with cols obs and rows probs}
 }
 \value{
 convolved pmfs by subtraction

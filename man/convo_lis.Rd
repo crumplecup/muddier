@@ -9,7 +9,7 @@ convo_lis(lis, pmfs = char_pmfs)
 \arguments{
 \item{lis}{is a list of integer ranks}
 
-\item{pmfs}{is a matrix of pmfs with colnames(vals) (charcoal ages)}
+\item{pmfs}{is a matrix of pmfs with rownames(vals) (charcoal ages)}
 }
 \value{
 a list of convolved `pmfs` with ranks in `lis`

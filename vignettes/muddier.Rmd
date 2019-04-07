@@ -40,7 +40,7 @@ head(charcoal)
 
 The `charcoal` dataset has 370 observations listed as rows.  The rownames of the object and the first column of data are the site ids.  At sites where the researchers took multiple samples, the site ids will have letters appended to them (eg. LK-187a, LK-187b, LK-187c).  The `family` column is the site id stripped of any ending letters, so that all observations from the same site share the same family id.  Researchers classified the deposit type of samples as fluvial fines (FF), fluvial gravels (FG) and debris-flow deposits (DF).  The `facies` column indicates the facies type using the two-letter classification codes (FF, FG, DF).  The `mn` column is the mean sample age BP as derived from the pmf in `char_pmfs`, and `rank` is the ordinal rank of each sample from youngest to oldest.
 
-If we examine the dimensions of each dataset, we see that both have 370 observations, but `char_pmfs` has 4,430 columns.  If we plot the values of a row against the values of the columns names, the result is the age distribution pmf of the sample.
+If we examine the dimensions of each dataset, we see `char_pmfs` has 370 columns and 4430 rows.  The column names match the row names of `charcoal`.  The row names of `char_pmfs` are the year values associated with the probability in the row.  If we plot the values of a column against the values of the row names, the result is the age distribution pmf of the sample.
 
 ```{r}
 library(magrittr)
@@ -49,40 +49,38 @@ library(magrittr)
 dim(charcoal)
 dim(char_pmfs)
 
-years <- char_pmfs %>% colnames %>% as.numeric
-probs <- char_pmfs[250,] %>% as.numeric
+years <- char_pmfs %>% rownames %>% as.numeric
+probs <- char_pmfs[,250] %>% unlist %>% as.numeric
 
 plot(years, probs, xlim=c(1000,1400), main='pmf of ob# 250')
 ```
 
 To produce these two datasets, I performed several operations on a csv file converted from the Excel file containing the original Lancaster & Casebeer (2007) data.  The file used to perform these operations is stored in the `data-raw` folder on the github reposity for this project.  Compared to the original data, this data has been sorted by mean age, and split into two datasets, one for sample variable data and one for numeric pmf vectors associated with each sample.
 
-Before we begin analyzing the data, I would like to verify that the datasets have been sorted correctly, and that the pmfs all sum to 1.  First I will make sure the rownames of the two datasets match, then I will test that each row of `char_pmfs` sums to 1.  Finally, I want to make sure the calculated means in `charcoal` match the means of the pmfs in `char_pmfs`.  To do this, I use the `testthat` package which employs the function `expect_equal`.  If the two arguments are equal to within a tolerance range, the test passes silently.  If the two arguments are not equal, the test fails with a warning.  Failure causes abortion of vignette construction, so every time you see a test run in code, that means it has passed.  I will explicitly mark unexecuted lines of code with the comment `# not run` at the top of the code snippet.
+Before we begin analyzing the data, I would like to verify that the datasets have been sorted correctly, and that the pmfs all sum to 1.  First I will make sure the rownames of `charcoal` match the column names of `char_pmfs`, then I will test that each column of `char_pmfs` sums to 1.  Finally, I want to make sure the calculated means in `charcoal` match the means of the pmfs in `char_pmfs`.  To do this, I use the `testthat` package which employs the function `expect_equal`.  If the two arguments are equal to within a tolerance range, the test passes silently.  If the two arguments are not equal, the test fails with a warning.  Failure causes abortion of vignette construction, so every time you see a test run in code, that means it has passed.  I will explicitly mark unexecuted lines of code with the comment `# not run` at the top of the code snippet.
 
 
 ```{r}
 library(testthat)
 
-# load package data
-data(charcoal, package = 'muddier')
-data(char_pmfs, package = 'muddier')
+years <- char_pmfs %>% rownames %>% as.numeric
+mns <- lapply(char_pmfs, function(a) weighted.mean(years, a))
 
-years <- char_pmfs %>% colnames %>% as.numeric
-mns <- apply(char_pmfs, 1, function(a) weighted.mean(years, a))
 
+# TESTING CODE #
 
 # test rownames are equal
 # test means are equal
 
 test_that('charcoal and char_pmfs match', {
-  expect_equal(rownames(charcoal), rownames(char_pmfs))
+  expect_equal(rownames(charcoal), colnames(char_pmfs))
   expect_equal(as.numeric(charcoal$mn), as.numeric(mns))
 })
 
 
 # test the pmfs sum to 1
-sums <- apply(char_pmfs, 1, sum) %>% as.numeric
-ones <- rep(1, nrow(char_pmfs))
+sums <- lapply(char_pmfs, sum) %>% as.numeric
+ones <- rep(1, ncol(char_pmfs))
 max(sums-ones)  # examine tolerance
 
 test_that('pmfs in char_pmfs sum to 1', {
@@ -115,10 +113,9 @@ fg_count[N>3]
 
 Inherited age is the age of the charcoal before becoming entrained in bank deposits.  By taking multiple samples of a facies type at a single sampling site, Lancaster & Casebeer (2007) were able to estimate a distribution range around inherited age.
 
-`charcoal` is intentionally sorted by rank so that an index of ranks is equivalent to the index of observations by row.  Furthermore, the rank number of a sample from `charcoal` is equivalent to row number of the pmf for the same sample in `char_pmfs`.  Rather than searching by site_id, I have elected to use rank number, and so the function `rank_list(ftype, dat = charcoal, min_count = 3)` returns the ranks of observations of a given facies type from `dat` above a minimum count `min_count`, with `dat` set to the charcoal data as a default, and minimum count set to 3.
+`charcoal` is intentionally sorted by rank so that an index of ranks is equivalent to the index of observations by row.  Furthermore, the rank number of a sample from `charcoal` is equivalent to column number of the pmf for the same sample in `char_pmfs`.  Rather than searching by site_id, I have elected to use rank number, and so the function `rank_list(ftype, dat = charcoal, min_count = 3)` returns the ranks of observations of a given facies type from `dat` above a minimum count `min_count`, with `dat` set to the charcoal data as a default, and minimum count set to 3.
 
-
-The concluding test in the snippet tells me that the ranks returned by the function `rank_list()` have the same family ids as the subsets in the previous example.
+The concluding test in the snippet tells me that the ranks returned by the function `rank_list()` have the same family ids as the subsets in the previous example.  While function calls in `muddier` are relatively succinct, the testing code is generally lengthier, and so I delineate the two portions of the snippet with the comment `# TESTING CODE #`.
 
 
 ```{r}
@@ -129,6 +126,9 @@ fg_ranks <- rank_list('FG')
 
 # inspect output
 df_ranks[[1]]
+
+
+# TESTING CODE #
 
 # family ids pulled by rank
 df_by_ranks <- charcoal[rank %in% unlist(df_ranks), family] %>% factor %>% levels %>% sort
@@ -148,9 +148,9 @@ test_that('rank list matches family ids', {
 
 ```
 
-I can examine the pmfs associated with a rank list using the function `pmf_by_rank(ranks, pmfs = char_pmfs)`.  Because the default argument for `pmfs` is set to `char_pmfs`, this second argument can be ommitted in this instance.  When passed a vector of ranks to the first argument `ranks`, `pmf_by_rank` returns a data.table with pmfs for each rank stored by row, with probabilities stored in columns and year values stored as column names.
+I can examine the pmfs associated with a rank list using the function `pmf_by_rank(ranks, pmfs = char_pmfs)`.  Because the default argument for `pmfs` is set to `char_pmfs`, this second argument can be ommitted in this instance.  When passed a vector of ranks to the first argument `ranks`, `pmf_by_rank` returns a data.table with pmfs for each rank stored by column, with probabilities stored as row values.
 
-When passed a list of rank vectors, as output by `rank_list`, to the first argument `ranks`, `pmf_by_rank` returns a list of data.tables, each containing the pmfs associated with ranks in the rank list, with probabiliites stored in column and year values stored as column names.
+When passed a list of rank vectors, as output by `rank_list`, to the first argument `ranks`, `pmf_by_rank` returns a list of data.tables, each containing the pmfs associated with ranks in the rank list, with probabiliites stored as row values.
 
 To test the functionality of `pmf_by_rank`, I am mostly concerned that I have inadvertently scrambled the pmfs.  I am already highly confident the rows of both datasets match, and the pmfs sum to 1, so now I would like to ensure they are ordered within each family from youngest to oldest.
 
@@ -160,9 +160,12 @@ df_pmfs <- pmf_by_rank(df_ranks)
 ff_pmfs <- pmf_by_rank(ff_ranks)
 fg_pmfs <- pmf_by_rank(fg_ranks)
 
+
+# TESTING CODE #
+
 # list wrapper for weighted.mean
 get_means <- function(pmfs, years)  {
-  lapply(pmfs, function(a) lapply(1:nrow(a), function(b, c) weighted.mean(years, c[b,]), c = a))
+  lapply(pmfs, function(a) lapply(a, function(b) weighted.mean(years, b)))
 }
 
 df_mns <- get_means(df_pmfs, years)
@@ -184,7 +187,7 @@ test_that('pmfs are sorted in ascending age', {
 ```
 
 
-### Convolving Ages
+## Convolving Ages
 
 If we are trying to characterize the distribution of inherited ages from the range of age distributions at a particular site, we can reason that the charcoal in the samples was no older than the youngest piece of charcoal in the set when the samples became entrained as a bank deposit, simply because the youngest sample had to become charcoal before becoming a bank deposit.  By this logic, we can characterize the distribution of inherited ages a given site by subtracting the youngest age distribution from the age distribution of each sample via convolution.
 
@@ -199,26 +202,6 @@ fg_cl <- convo_list(fg_ranks)
 
 
 # TESTING CODE #
-
-# although my system issued an NA warning
-# a brute force screen shows no NAs produced
-# i think it refers to stripped row/col names
-screen_for_NAs <- function(cl)  {
-  for (i in seq_along(cl))  {
-    site <- cl[[i]]
-    for (j in seq_along(site))  {
-      ob <- site[[j]]
-      for (k in seq_along(ob))  {
-        if(is.na(ob[k])) print(i, j, k)
-      }
-    }
-  }
-}
-
-screen_for_NAs(df_cl)
-screen_for_NAs(ff_cl)
-screen_for_NAs(fg_cl)
-
 
 # slight variation on list wrapper
 pmf_means <- function(pmfs, years)  {
@@ -244,21 +227,17 @@ test_that('convolved pmfs are sorted in ascending age', {
 
 # because we convolved the pmfs, check that they sum to 1
 get_sums <- function(pmfs)  {
-  apply(pmfs, 2, sum)
+  lapply(pmfs, function (a) lapply(a, sum)) %>% unlist %>% as.numeric
 }
 
-list_sums <- function(pmfs)  {
-  lapply(pmfs, get_sums) %>% unlist %>% as.numeric
-}
-
-dfc_sums <- list_sums(df_cl)
+dfc_sums <- get_sums(df_cl)
 dfc_ones <- rep(1, length(dfc_sums))
 max(dfc_sums-dfc_ones)  # examine tolerance
 
-ffc_sums <- list_sums(ff_cl)
+ffc_sums <- get_sums(ff_cl)
 ffc_ones <- rep(1, length(ffc_sums))
 
-fgc_sums <- list_sums(fg_cl)
+fgc_sums <- get_sums(fg_cl)
 fgc_ones <- rep(1, length(fgc_sums))
 
 test_that('pmfs in char_pmfs sum to 1', {
@@ -270,7 +249,7 @@ test_that('pmfs in char_pmfs sum to 1', {
 ```
 
 
-### Truncation at Zero
+## Truncation at Zero
 
 The inherited age convolutions include values below zero.  This occurs in the specific case of subtracting the youngest age from itself, which creates a distribution centered on zero, and approximately half of the values in the PMF will be below zero.  Because we know that inherited ages must be positive, we can truncate the pmf at zero by setting probabilities at values below zero to zero using the `trunc_0`.  We then need to renormalize the truncated using the `normalize` function, or we can do both at once using the `trunc_norm` wrapper.
 
@@ -339,39 +318,107 @@ test_that('truncated pmfs are renormalized and sum to 1', {
 ```
 
 
+The use of data.tables enables easy application of nested `lapply` functions.  In this case, the parent list is the set of sites containing multiple samples of a given facies.  Each parent element contains a child list of pmfs by observations.  Once we have derived the convolved pmfs of inherited age for a given facies, we can sum their distributions and renormalize to produce the inherited age distribution of the facies.
 
+The convenience function `rack` converts a list or data.table to a matrix by cbind, provided the elements of the list are of equal length.  The pmfs are stored in row values with observations by column, so after racking the list into a large matrix, we can sum the distributions using `rowSums` and renormalize using `normalize`.
 
 ```{r, fig.show='hold'}
-df_dt <- lapply(df_trc, rack) %>% rack %>% rowSums %>% normalize
-ff_dt <- lapply(ff_trc, rack) %>% rack %>% rowSums %>% normalize
-fg_dt <- lapply(fg_trc, rack) %>% rack %>% rowSums %>% normalize
+# convert from list of data.tables to matrix
+to_mat <- function(ls)  {
+  lapply(ls, rack) %>% rack
+}
 
+df_dt <- to_mat(df_trc) %>% rowSums %>% normalize
+ff_dt <- to_mat(ff_trc) %>% rowSums %>% normalize
+fg_dt <- to_mat(fg_trc) %>% rowSums %>% normalize
+
+
+# plot results
 plot(sort(years), df_dt, type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'pmf')
 plot(sort(years), ff_dt, type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,4000), main = 'FF Inherited Age', xlab = 'inherited age', ylab = 'pmf')
 plot(sort(years), fg_dt, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10000), main = 'FG Inherited Age', xlab = 'inherited age', ylab = 'pmf')
 ```
 
+While `muddier` uses pmfs to represent pdfs to perform convolution, the results are often easier to consume as cdfs or log exceedance graphs.  The `to_cdf` and `to_exceed` functions convert pmfs to cdfs and log10 exceedance value respectively.
+
 ```{r, fig.show='hold'}
+# convert pmfs to cdfs
 df_cdf <- df_dt %>% to_cdf
 ff_cdf <- ff_dt %>% to_cdf
 fg_cdf <- fg_dt %>% to_cdf
 
+# convert pmfs to log 10 exceedance
 df_exc <- df_dt %>% to_exceed
 ff_exc <- ff_dt %>% to_exceed
 fg_exc <- fg_dt %>% to_exceed
 
-
+# plot results
 plot(sort(years), df_cdf, type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), ylim = c(0,1), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'cdf')
 plot(sort(years), df_exc, type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
 plot(sort(years), ff_cdf, type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,4000), main = 'FF Inherited Age', xlab = 'inherited age', ylab = 'cdf')
 plot(sort(years), ff_exc, type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,4000), main = 'FF Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
 plot(sort(years), fg_cdf, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10000), main = 'FG Inherited Age', xlab = 'inherited age', ylab = 'cdf')
 plot(sort(years), fg_exc, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10000), main = 'FG Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
+```
+
+
+## Bootstrapping CIs
 
 
 
+
+```{r, fig.show='hold'}
+library(parallel)
+options(mc.cores=detectCores())
+set.seed(10101)
+
+# boostrap ids with replacement at each site
+df_bl <- boot_ids(50, df_ranks)
+
+# convolve inherited ages at each site
+df_cbl <- mclapply(df_bl, convo_list)
+
+# truncate and normalize at zero
+df_t <- mclapply(df_cbl, trunc_list)
+
+# convert to matrix
+dfb_pmf <- lapply(df_t, to_mat) %>% rack
+dfb_pmf_cis <- apply(dfb_pmf, 1, get_cis)
+
+# get cis for pmf, cdf, and log 10 exc
+dfb_cdf <- apply(dfb_pmf, 2, to_cdf)
+dfb_cdf_cis <- apply(dfb_cdf, 1, get_cis)
+
+dfb_exc <- suppressWarnings(apply(dfb_pmf, 2, to_exceed)) 
+dfb_exc_cis <- apply(dfb_exc, 1, get_cis)
+
+rownames(dfb_pmf_cis) <- c('lwr','med','upr')
+rownames(dfb_cdf_cis) <- c('lwr','med','upr')
+rownames(dfb_exc_cis) <- c('lwr','med','upr')
+
+
+# plot results
+plot(sort(years), dfb_pmf_cis[3,], type = 'l', lwd = 3, col = 'brown', xlim = c(0,2000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'pmf')
+lines(sort(years), dfb_pmf_cis[2,], lwd = 3, col = 'black')
+lines(sort(years), dfb_pmf_cis[1,], lwd = 3, col = 'slateblue')
+lines(sort(years), df_dt, lwd = 3, col = 'goldenrod')
+legend('topright', legend = c('obs','upr','med','lwr'), fill = c('goldenrod', 'brown', 'black', 'slateblue'))
+
+
+plot(sort(years), dfb_cdf_cis[3,], type = 'l', lwd = 3, col = 'brown', xlim = c(0,7000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'cdf')
+lines(sort(years), dfb_cdf_cis[2,], lwd = 3, col = 'black')
+lines(sort(years), dfb_cdf_cis[1,], lwd = 3, col = 'slateblue')
+lines(sort(years), df_cdf, lwd = 3, col = 'goldenrod')
+legend('bottomright', legend = c('obs','upr','med','lwr'), fill = c('goldenrod', 'brown', 'black', 'slateblue'))
+
+plot(sort(years), dfb_exc_cis[3,], type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
+lines(sort(years), dfb_exc_cis[2,], lwd = 3, col = 'black')
+lines(sort(years), dfb_exc_cis[1,], lwd = 3, col = 'slateblue')
+lines(sort(years), df_exc, lwd = 3, col = 'goldenrod')
+legend('topright', legend = c('obs','upr','med','lwr'), fill = c('goldenrod', 'brown', 'black', 'slateblue'))
 
 ```
+
 
 
 
