@@ -197,14 +197,12 @@ df_cl <- convo_list(df_ranks)
 ff_cl <- convo_list(ff_ranks)
 fg_cl <- convo_list(fg_ranks)
 
-# slight variation on list wrapper
-pmf_means <- function(pmfs, years)  {
-  lapply(pmfs, function(a) lapply(a, function(b) weighted.mean(sort(years), b)))
-}
 
+# TESTING CODE #
 
 # although my system issued an NA warning
 # a brute force screen shows no NAs produced
+# i think it refers to stripped row/col names
 screen_for_NAs <- function(cl)  {
   for (i in seq_along(cl))  {
     site <- cl[[i]]
@@ -220,6 +218,13 @@ screen_for_NAs <- function(cl)  {
 screen_for_NAs(df_cl)
 screen_for_NAs(ff_cl)
 screen_for_NAs(fg_cl)
+
+
+# slight variation on list wrapper
+pmf_means <- function(pmfs, years)  {
+  lapply(pmfs, function(a) lapply(a, function(b) weighted.mean(sort(years), b)))
+}
+
 
 dfc_mns <- pmf_means(df_cl, years)
 ffc_mns <- pmf_means(ff_cl, years)
@@ -265,6 +270,108 @@ test_that('pmfs in char_pmfs sum to 1', {
 ```
 
 
+### Truncation at Zero
+
+The inherited age convolutions include values below zero.  This occurs in the specific case of subtracting the youngest age from itself, which creates a distribution centered on zero, and approximately half of the values in the PMF will be below zero.  Because we know that inherited ages must be positive, we can truncate the pmf at zero by setting probabilities at values below zero to zero using the `trunc_0`.  We then need to renormalize the truncated using the `normalize` function, or we can do both at once using the `trunc_norm` wrapper.
+
+```{r}
+
+trunc_list <- function(pmfs, yrs=sort(years))  {
+  lapply(pmfs, function(a) lapply(a, function(b) trunc_norm(as.numeric(unlist(b)), yrs)))
+}
+
+df_trc <- trunc_list(df_cl)
+ff_trc <- trunc_list(ff_cl)
+fg_trc <- trunc_list(fg_cl)
+
+
+# TESTING CODE #
+
+# test that truncated pmfs do not contain values below zero
+# sum probabilities of values below zero in a vector
+sum_subzero <- function(pmf, index = sort(years))  {
+  pmf <- pmf %>% unlist %>% as.numeric
+  sum(pmf[index<0])
+}
+
+# list wrapper for sum_subzero
+subzero_sum <- function(pmfs, index = sort(years))  {
+  lapply(pmfs, function(a) lapply(a, function(b) sum_subzero(b,index))) %>% unlist %>% as.numeric
+}
+
+df_szs <- subzero_sum(df_trc)
+ff_szs <- subzero_sum(ff_trc)
+fg_szs <- subzero_sum(fg_trc)
+
+# vector of zero to compare to for test
+df_zs <- rep(0, length(df_szs))
+ff_zs <- rep(0, length(ff_szs))
+fg_zs <- rep(0, length(fg_szs))
+
+test_that('truncated pmfs do not contain values below zero', {
+  expect_equal(df_szs, df_zs)
+  expect_equal(ff_szs, ff_zs)
+  expect_equal(fg_szs, fg_zs)
+})
+
+
+# test that truncated pmfs are renormalized and sum to one
+list_sums <- function(pmfs)  {
+  lapply(pmfs, function(a) lapply(a, sum)) %>% unlist %>% as.numeric
+}
+
+dft_sums <- list_sums(df_trc)
+dft_ones <- rep(1, length(dft_sums))
+max(dft_sums-dft_ones)  # examine tolerance
+
+fft_sums <- list_sums(ff_trc)
+fft_ones <- rep(1, length(fft_sums))
+
+fgt_sums <- list_sums(fg_trc)
+fgt_ones <- rep(1, length(fgt_sums))
+
+test_that('truncated pmfs are renormalized and sum to 1', {
+  expect_equal(dft_sums, dft_ones)
+  expect_equal(fft_sums, fft_ones)
+  expect_equal(fgt_sums, fgt_ones)
+})
+
+```
+
+
+
+
+```{r, fig.show='hold'}
+df_dt <- lapply(df_trc, rack) %>% rack %>% rowSums %>% normalize
+ff_dt <- lapply(ff_trc, rack) %>% rack %>% rowSums %>% normalize
+fg_dt <- lapply(fg_trc, rack) %>% rack %>% rowSums %>% normalize
+
+plot(sort(years), df_dt, type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'pmf')
+plot(sort(years), ff_dt, type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,4000), main = 'FF Inherited Age', xlab = 'inherited age', ylab = 'pmf')
+plot(sort(years), fg_dt, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10000), main = 'FG Inherited Age', xlab = 'inherited age', ylab = 'pmf')
+```
+
+```{r, fig.show='hold'}
+df_cdf <- df_dt %>% to_cdf
+ff_cdf <- ff_dt %>% to_cdf
+fg_cdf <- fg_dt %>% to_cdf
+
+df_exc <- df_dt %>% to_exceed
+ff_exc <- ff_dt %>% to_exceed
+fg_exc <- fg_dt %>% to_exceed
+
+
+plot(sort(years), df_cdf, type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), ylim = c(0,1), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'cdf')
+plot(sort(years), df_exc, type = 'l', lwd = 3, col = 'brown', xlim = c(0,11000), main = 'DF Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
+plot(sort(years), ff_cdf, type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,4000), main = 'FF Inherited Age', xlab = 'inherited age', ylab = 'cdf')
+plot(sort(years), ff_exc, type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,4000), main = 'FF Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
+plot(sort(years), fg_cdf, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10000), main = 'FG Inherited Age', xlab = 'inherited age', ylab = 'cdf')
+plot(sort(years), fg_exc, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10000), main = 'FG Inherited Age', xlab = 'inherited age', ylab = 'log10 exc')
+
+
+
+
+```
 
 
 

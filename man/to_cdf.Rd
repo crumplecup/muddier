@@ -4,10 +4,10 @@
 \alias{to_cdf}
 \title{to_cdf converts numeric pmf vector to cdf of equal length}
 \usage{
-to_cdf(vec)
+to_cdf(pmf)
 }
 \arguments{
-\item{vec}{is a numeric pmf}
+\item{pmf}{is a numeric vector}
 }
 \value{
 a numeric vector of the cdf

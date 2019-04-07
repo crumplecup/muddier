@@ -365,16 +365,16 @@ sum_pmfs <- function(lis,len)  {
 #'
 #' Given a numeric pmf, returns a numeric vector of the cdf.
 #'
-#' @param vec is a numeric pmf
+#' @param pmf is a numeric vector
 #' @return a numeric vector of the cdf
 #'
 #' @export
 
-to_cdf <- function(vec)  {
-  vec <- sort(vec)
-  cdf <- array(0,length(vec))
-  for (i in seq_along(vec)) {
-    cdf[i] <- mean(vec<=vec[i])
+to_cdf <- function(pmf)  {
+  cdf <- array(0,length(pmf))
+  for (i in seq_along(pmf)) {
+    if (i == 1) cdf[i] <- pmf[i]
+    if (i >1 )  cdf[i] <- pmf[i] + cdf[i-1]
   }
   cdf
 }
@@ -388,6 +388,7 @@ to_cdf <- function(vec)  {
 #' @param vec is a numeric pmf
 #' @return a numeric vector of the log10 exceedance distribution
 #' @seealso to_cdf
+#' @export
 
 to_exceed <- function(vec)  {
   log10(1 - to_cdf(vec))
