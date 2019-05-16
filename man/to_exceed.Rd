@@ -4,10 +4,10 @@
 \alias{to_exceed}
 \title{to_exceed converts numeric pmf vectors to log10 exceedance distributions of equal length}
 \usage{
-to_exceed(vec)
+to_exceed(pmf)
 }
 \arguments{
-\item{vec}{is a numeric pmf}
+\item{pmf}{is a numeric vector of probabilities summing to one}
 }
 \value{
 a numeric vector of the log10 exceedance distribution

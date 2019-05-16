@@ -101,8 +101,8 @@ convo_lis <- function(lis, pmfs = char_pmfs)  {
 convo_list <- function(ranks, pmfs = char_pmfs)  {
   index <- as.numeric(rownames(char_pmfs))
   rank_pmfs <- pmf_by_rank(ranks, pmfs)
-  cpmfs <- lapply(rank_pmfs, function(a)
-    setDT(lapply(a, function(b, c) convo(unlist(b), unlist(c), years), c = a[,1])))
+  lapply(rank_pmfs, function(a)
+    setDT(lapply(a, function(b, c) convo(unlist(b), unlist(c), index), c = a[,1])))
 }
 
 
@@ -186,18 +186,18 @@ convo_rank <- function(ranks,
 #' via convolution
 #'
 #' @param vec is a vector of sorted numeric ranks
-#' @param pmfs is a matrix of pmfs with rows of obs by rank and cols of probs
+#' @param pmfs is a matrix of pmfs with cols of obs by rank and rows of probs
 #' @return a matrix of pmfs convolved by subtracting pmf of lowest rank from pmfs
 #'   with ranks in `vec`
 #' @import magrittr
 #' @export
 
 convo_ranks <- function(vec, pmfs = char_pmfs)  {
-  index <- as.numeric(colnames(pmfs))
+  index <- as.numeric(rownames(pmfs))
   mclapply(seq_along(vec), function(a)
     mclapply(seq_along(a[[1]]), function(b)
       lapply(b, function(c)
-        convo(pmfs[vec[[a]][[b]][c],],pmfs[vec[[a]][[b]][1],], index))) %>% unlist) %>% setDT
+        convo(pmfs[,vec[[a]][[b]][c]],pmfs[,vec[[a]][[b]][1]], index))) %>% unlist) %>% setDT
 }
 
 
@@ -249,6 +249,17 @@ fit_pmf <- function(vals,index)  {
 #' @export
 
 get_cis <- function(x, lwr=.0250, med=.5000, upr=.9750)  {
+  n <- length(x)
+  id_lwr <- n * lwr
+  id_med <- n * med
+  id_upr <- n * upr
+  vec <- sort(x)
+  cis <- vec[c(id_lwr, id_med, id_upr)]
+  names(cis) <- c('lwr','med','upr')
+  cis
+}
+
+get_cis1 <- function(x, lwr=.0250, med=.5000, upr=.9750)  {
   cis <- vector(length=3, mode='numeric')
   vec <- staTools::cdf(x)
   k <- 1
@@ -263,6 +274,8 @@ get_cis <- function(x, lwr=.0250, med=.5000, upr=.9750)  {
 }
 
 
+
+
 #' normalize
 #'
 #' normalize a vector of probabilities
@@ -271,11 +284,11 @@ get_cis <- function(x, lwr=.0250, med=.5000, upr=.9750)  {
 #' @return normalized vector of `probs`
 #' @export
 normalize <- function(probs)  {
-  norm <- array(0, length(probs))
+  tot <- sum(probs)
   for (i in seq_along(probs))  {
-    norm[i] <- probs[i] / sum(probs)
+    probs[i] <- probs[i] / tot
   }
-  norm
+  probs
 }
 
 
@@ -319,6 +332,49 @@ probcomb <- function(x,y)   {
   }
   prob
 }
+
+
+
+#' rack list
+#'
+#' turn a list of data.tables of equal size into a matrix via cbind
+#'
+#' @param ls is a list of data.tables of equal size
+#' @return data.tables in `ls` colbound into a matrix
+#' @export
+rackl <- function(ls)  {
+  mat <- rack(ls[[1]])
+  rows <- nrow(mat)
+  cols <- ncol(mat)
+  mat <- matrix(0, nrow = rows, ncol = cols * length(ls))
+  for (i in seq_along(ls))  {
+    mat[ ,((cols * i) - (cols - 1)):(cols * i)] <- rack(ls[[i]])
+  }
+  mat
+}
+
+
+#' rack boot
+#'
+#' turn a list of data.tables of equal size into a matrix via cbind
+#'
+#' @param ls is a list of data.tables of equal size
+#' @return data.tables in `ls` colbound into a matrix
+#' @export
+rackb <- function(ls)  {
+  rows <- length(ls[[1]])
+  cols <- length(ls)
+  mat <- matrix(0, nrow = rows, ncol = cols)
+  for (i in seq_along(ls))  {
+    mat[ , i] <- ls[[i]]
+  }
+  vec <- vector(length = rows, mode = 'numeric')
+  for (i in seq_along(vec))  {
+    vec[i] <- sum(mat[i,])/cols
+  }
+  vec
+}
+
 
 
 #' Rank List
@@ -386,13 +442,13 @@ to_cdf <- function(pmf)  {
 #'
 #' Given a numeric pmf, returns a numeric vector of the log10 exceedance distribution
 #'
-#' @param vec is a numeric pmf
+#' @param pmf is a numeric vector of probabilities summing to one
 #' @return a numeric vector of the log10 exceedance distribution
 #' @seealso to_cdf
 #' @export
 
-to_exceed <- function(vec)  {
-  log10(1 - to_cdf(vec))
+to_exceed <- function(pmf)  {
+  1 - to_cdf(pmf)
 }
 
 
@@ -406,6 +462,18 @@ to_exceed <- function(vec)  {
 
 to_lexc <- function(vec)  {
   log10(1 - to_cdf(vec))
+}
+
+
+#' to matrix
+#'
+#' from list of data.tables to matrix using cbind
+#'
+#' @param ls is a list of data.tables
+#' @return a matrix merged by cbind
+#' @export
+to_mat <- function(ls)  {
+  lapply(ls, rack) %>% rack
 }
 
 
@@ -437,12 +505,23 @@ to_pmf <- function(cdf)  {
 #' @return `pmf` with probs at vals below zero set to zero
 #' @export
 trunc_0 <- function(pmf, index)  {
-  trunc <- pmf
-  for (i in seq_along(index))  {
-    if (index[i] < 0)  trunc[i] <- 0
-  }
-  trunc
+  pmf[index < 0] <- 0
+  pmf
 }
+
+
+#' trunc list
+#'
+#' truncate pmfs in list at values below zero and renormalize
+#'
+#' @param pmfs is a list of numeric vectors of probabilities that sum to 1
+#' @param index is a numeric vector of values associated with probs in `pmfs`
+#' @return truncated and renormalized pmfs in list
+#' @export
+trunc_list <- function(pmfs, index)  {
+  lapply(pmfs, function(a) trunc_norm(unlist(a), index))
+}
+
 
 
 #' truncate & normalize
@@ -568,15 +647,17 @@ cumult <- function(vec,dif,cum=0) {
 #'
 #' Rack list with elements of equal length into a matrix using cbind
 #'
-#' @param lis is a list with elements of equal length
-#' @return elements of `lis` column bound into a matrix
+#' @param ls is a list with elements of equal length
+#' @return elements of `ls` column bound into a matrix
 #' @export
-rack <- function(lis)  {
-  dt <- lis[[1]]
-  for (i in 2:length(lis))  {
-    dt <- cbind(dt, lis[[i]])
+rack <- function(ls)  {
+  rows <- length(ls[[1]])
+  cols <- length(ls)
+  mat <- matrix(0, nrow = rows, ncol = cols)
+  for (i in seq_along(ls))  {
+    mat[ , i] <- ls[[i]]
   }
-  dt
+  mat
 }
 
 
@@ -606,6 +687,14 @@ id_by_rank <- function(ranks, dat = charcoal)  {
 }
 
 
+
+
+log10.axis <- function(side, at, ...) {
+  at.minor <- log10(outer(1:9, 10^(min(at):max(at))))
+  lab <- sapply(at, function(i) as.expression(bquote(10^ .(i))))
+  axis(side=side, at=at.minor, labels=NA, tcl=par('tcl')*0.5, ...)
+  axis(side=side, at=at, labels=lab)
+}
 
 
 

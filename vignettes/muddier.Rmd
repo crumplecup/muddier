@@ -255,9 +255,6 @@ The inherited age convolutions include values below zero.  This occurs in the sp
 
 ```{r}
 
-trunc_list <- function(pmfs, yrs=sort(years))  {
-  lapply(pmfs, function(a) lapply(a, function(b) trunc_norm(as.numeric(unlist(b)), yrs)))
-}
 
 df_trc <- trunc_list(df_cl)
 ff_trc <- trunc_list(ff_cl)
@@ -389,7 +386,7 @@ dfb_pmf_cis <- apply(dfb_pmf, 1, get_cis)
 dfb_cdf <- apply(dfb_pmf, 2, to_cdf)
 dfb_cdf_cis <- apply(dfb_cdf, 1, get_cis)
 
-dfb_exc <- suppressWarnings(apply(dfb_pmf, 2, to_exceed)) 
+dfb_exc <- apply(dfb_pmf, 2, to_exceed) 
 dfb_exc_cis <- apply(dfb_exc, 1, get_cis)
 
 rownames(dfb_pmf_cis) <- c('lwr','med','upr')
