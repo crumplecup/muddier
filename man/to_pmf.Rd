@@ -10,7 +10,7 @@ to_pmf(cdf)
 \item{cdf}{is a numeric vector (a cdf)}
 }
 \value{
-the pmf derived from \code{cdf} as a numeric vector
+the pmf derived from `cdf` as a numeric vector
 }
 \description{
 Given the cdf as a numeric vector, return the derived pmf as a numeric vector of equal length.

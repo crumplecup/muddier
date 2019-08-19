@@ -202,6 +202,27 @@ convo_ranks <- function(vec, pmfs = char_pmfs)  {
 
 
 
+#' distribute
+#'
+#' given a pdf for a vector of values, returns a sample space of vals distributed
+#' around the pdf
+#'
+#' @param pdf is a vector of probs summing to one
+#' @param val is a vector of values associated with `pdf`
+#' @param size is a large integer (>100)
+#' @return sample of vals reflective of pdf
+#' @export
+
+distribute <- function(pdf, val, size=10000){
+  vec <- 0
+  for (i in seq_along(pdf)) {
+    vec <- c(vec, replicate(round(size * pdf[i]), val[i]))
+  }
+  vec[-1]
+}
+
+
+
 #' Draw from exponential decay distribution
 #'
 #' Draw from exponential decay distribution $y = x^k$
@@ -483,7 +504,7 @@ to_mat <- function(ls)  {
 #' Given the cdf as a numeric vector, return the derived pmf as a numeric vector of equal length.
 #'
 #' @param cdf is a numeric vector (a cdf)
-#' @return the pmf derived from \code{cdf} as a numeric vector
+#' @return the pmf derived from `cdf` as a numeric vector
 #' @export
 
 to_pmf <- function(cdf)  {

@@ -8,19 +8,30 @@ library(parallel)
 options(mc.cores=detectCores())
 set.seed(10101)
 
+# summary data frame
+df <- data.frame(age = sort(index), df = df_pmf, ff = ff_pmf, fg = fg_pmf)
+write.csv(df, 'inherage.csv')
+
 # debris flow inherited age
 index <- char_pmfs %>% rownames %>% as.numeric
 df_ranks <- rank_list('DF')
 df_cl <- convo_list(df_ranks)
-df_trc <- lapply(df_cl, function(a) trunc_list(a, index))
-df_pmf <- to_mat(df_trc) %>% rowSums %>% normalize
+df_trc <- lapply(df_cl, function(a) trunc_list(a, sort(index)))
+df_trc <- lapply(df_trc, rack)
+df_pmf <- df_trc[[1]]
+
+for (i in 2:7) {
+  df_pmf <- cbind(df_pmf, df_trc[[i]])
+}
+
+df_pmf <- df_pmf %>% rowSums %>% normalize
 df_cdf <- df_pmf %>% to_cdf
 df_exc <- df_pmf %>% to_exceed
 
 setwd('/home/crumplecup/work/muddier')
-usethis::use_data(df_pmf)
-usethis::use_data(df_cdf)
-usethis::use_data(df_exc)
+usethis::use_data(df_pmf, overwrite = T)
+usethis::use_data(df_cdf, overwrite = T)
+usethis::use_data(df_exc, overwrite = T)
 
 # fluvial fines inherited age
 index <- char_pmfs %>% rownames %>% as.numeric %>% sort

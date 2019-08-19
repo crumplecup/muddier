@@ -1,0 +1,234 @@
+---
+title: 'summer2019_update'
+author: 'Erik Rose'
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{summer2019_update}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+  ```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Summer Update
+
+First I describe the output for the Miller/Burnett model, and how I make use of it in this research.  Second, I describe the process of geolocating Knowles Creek and matching Lancaster transect survey data to analogous positions in the M/B output, and how we use Lancaster sediment deposit data to weight delivery probabilities from the M/B model.  The third section decribes estimating the residence times of deposits by correcting for inherited charcoal age.  The fourth section describes our initial attempts at estimating debris flow deposit flux rates.
+
+## Miller/Burnett Model Output
+
+The Miller/Burnett model uses a 10 meter resolution DEM to estimate debris flow delivery probabilities along stream channels in the Siuslaw basin.  The two primary outputs of the model are a spatial points shapefile representing the channel as a linked node network, and a raster showing expected source intensities at the same resolution as the input DEM.  This research does not make use of the raster of source intensities, rather the primary interest is in the delivery probabilities associated with nodes in the linked-node network representation of the channel.
+
+The Miller/Burnett model uses the input DEM to predict the flow of water across the landscape and estimate stream channel position and extent.  While water can flow from a pixel in any of eight directions depending on the slope and curvature of the pixel, the model defines channels as directional flow across a path of contiguous pixel corners.  Each node in the stream network has a parent node tracing back to the point of initiation, and a child node leading to eventual output from the watershed.
+
+Debris flows have a probability of occurring on each pixel of the landscape, and the model then estimates the aggregate probability of each debris flow reaching the channel, traversing along the channel and depositing in-stream.  The delivery probability of a node represents the cumulative probability of receiving debris flow delivery from all sources in the landscape.  Given that the input DEM was 10m in resolution, a channel node where neighboring nodes are connected along pixel edges represents the 10m of channel nearest to the node position, 5m up- and downstream.  If the channel path crosses a pixel from corner to corner (not across an edge), then the segment length is closer to 14 meters.  Depending upon the combination of neighboring connection lengths, nodes represent channel lengths varying in size from 10-14m, 5-7m up- and downstream of the node position.
+
+The `muddier` package contains functions and data associated with this research project.  The data object `knowles` is the subset of nodes for Knowles Creek.
+
+```{r, dpi=150}
+library(muddier)
+library(sp)
+
+# the linked-node network for knowles creek is 'knowles'
+plot(knowles, pch = 20, col = 'slateblue', xlab = 'knowles creek')
+
+# nodes consist of contiguous pixel corners
+plot(knowles[250:265,], pch = 20, col = 'slateblue', xlab = 'zoomed in on nodes')
+
+```
+
+## Georeferencing Knowles Creek
+
+When field researchers record a GPS position of a tributary junction in the Lancaster survey data, the corresponding node on the linked-node network may diverge significantly in location.  First, the model coerces channel position to corner points along a raster matching the input DEM in resolution.  Second, the model applies a smoothing algorithm to avoid jagged or sawtoothed interpretations of smooth channnels traveling at angles to the raster pixel edges.  The additive results of both processes can result in significant spatial divergence in position from the actual location of a given landmark.
+
+The distance between landmarks along the linked-node network can vary from the hipchain distances recorded in the Lancaster survey data due to the same two processes, namely coercion to a 10m raster and channel smoothing.  Hipchain distances relative to node network distances may either be stretched or shrunken.  
+
+During a 2006 survey, Lancaster recorded the GPS coordinates of a number of tributary junctions along Knowles and assigned them id numbers.  Although the majority of the tributary junctions recorded are downstream of the portion of the channel later surveyed by transect, the transect surveyors noted the presence of four tributary junctions recorded by Lancaster in 2006, which I was also able to locate by valley topography in LiDAR imagery and find a clear analogue in the linked-node network representation.
+
+Transect survey field notes also referenced three tributary junctions further upstream, naming two of the tributaries as Heron and Boomer creeks, and noted the third to be intersecting the right bank of Knowles at hipchain 1448.  The tributary junctions were identifiable by valley topography evident in LiDAR imagery of the area, and had clear analogues in the linked-node network.  Lancaster also recorded GPS positions at hipchains 793 and 2907 in 2006.
+
+The node shapefile from the Miller/Burnett output includes a variable called `ToMouth_km` which represents the distance to the channel outlet in kilometers for a given channel node.  The difference in `ToMouth_km` values between nodes, whether it is greater or smaller than the hipchain distance recorded in the field survey between the same landmarks, determines the degree to which the hipchain distances have expanded or shrunken by coercion to the linked-node network.  To estimate the position of a transect on the node network given the hipchain distance from the Lancaster survey, I first multiply the hipchain length of the transect distance by the ratio between the outlet and hipchain length, resulting in an estimated outlet distance for the transect.  Then I find the nearest node to the estimated transect position and assign the transect to the node.
+
+The `muddier` package includes the resulting data object called `landmarks`.  The `x` and `y` variables record the spatial position of the landmark node, `hip` records the hipchain distance upstream of the tributary junction for K-38, corrected for elevation, `nodeid` records the id of the corresponding node in the linked-node network for the landmark, `kmtout` is renamed from `ToMouth_km` and stands for 'kilometers to outlet', and `outhip` is the ratio of the difference in outlet distance and hipchain distance between the current and preceding node in the table. For the most upstream portion of the transect survey, lacking a landmark upstream of the survey site, I make the compromise of assuming the outlet to hipchain ratio is identical to the ratio for the nearest known segment of the survey area.  Generally, hipchain distances are longer than outlet distances, both because the field researcher may cross banks in the process of securing the hipchain, elongating the distance traveled by taking a more sinuous travel path, and because the node-network representation is algorithmically smoothed, which shortens the path distance by reducing jaggedness in the path.
+
+```{r}
+landmarks
+```
+
+
+Survey data at transects include valley sediment wedge area and contributing area.  For nodes lying between transects, I estimate sediment wedge area and contributing area by linear interpolation.  The Lancaster survey covers a channel segment consisting of 327 nodes, which I have saved into the `muddier` package as the object `transects`.
+
+
+```{r, dpi=150, fig.cap='knowles in blue, transects in green, landmarks in red'}
+plot(knowles, pch = 20, col = 'slateblue')
+points(transects, pch = 20, col = 'forestgreen')
+points(landmarks[ , 1:2], pch = 20, col = 'coral3')
+
+```
+
+During the transect survey, the field researchers selected transect positions that captured inflections in the valley contour.  By recording the depth of sediment across the transect, the researcher can estimate the volume of sediment in a valley area by linear interpolation due to careful selection of transect position to represent the valley contour.
+
+Comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows poor correlation between delivery probabilties and sediment deposition along the channel.  In a similar manner to how Miller & Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model.
+
+```{r}
+plot(transects$area, transects$DebrisFlow, 
+     col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
+     xlab='Cross-sectional Area (m2)',ylab='Delivery Probability' )
+abline(lm(transects$DebrisFlow ~ transects$area),col='gray')
+
+# weight delivery probs by transect deposit volumes
+
+sum_area <- sum(transects$area)  # total area
+area_wt <- transects$area / sum_area  # vector of weights
+area_p <- transects$dfprob * area_wt  # weighted probs
+rel_p <- area_p / sum(area_p)  # normalized weighted probs
+
+plot(transects$area, rel_p, 
+     col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
+     xlab='Cross-sectional Area (m2)',ylab='Weighted Delivery Probability' )
+abline(lm(rel_p ~ transects$area),col='gray')
+
+```
+
+
+## Debris Flow Residence Times
+
+The Lancaster dataset includes 370 radiocarbon-dated charcoal samples from stream bank deposits in Knowles, Bear, Cedar and Golden Ridge creeks.  The sample ages can characterize the residence times of debris flows and fluvial deposits in stream, as the deposit cannot be older than the youngest piece of charcoal in the deposit.  The period of time a piece of charcoal spends before becoming entrained in a stream deposit is the inherited age, and the sample age of the charcoal is the sum of the residence time of the deposit and the inherited age of the charcoal.
+
+The field researchers collected multiple samples at deposit sites for debris flows, fluvial fines and fluvial gravels to assess the distribution of inherited ages in entrained charcoal.  The sample ages come back from the lab as age distribution curves discretized to 5-year intervals, showing the probability that the sample age falls within a given 5-year range, comprising a PMF.  At each site with multiple samples, I subtracted the PMF of the youngest sample from the PMF of each sample at that site via convolution, including the youngest sample itself.  Then I summed together the convolved PMFs by facies and renormalized to produce an inherited age distribution for each facies.  I characterized the uncertainty around each inherited age distribution by bootstrapping.
+
+The `muddier` vignette describes the functions and data objects used to estimate inherited age distributions and residence times, which is available at https://crumplecup.github.io/muddier/articles/muddier.html.
+
+```{r, fig.cap = 'empiric cdf in black, bootstrapped CIs in red, phase-type fit in blue'}
+# plot inherited age CDF for debris flows
+library(magrittr)
+index <- char_pmfs %>% rownames %>% as.numeric %>% sort
+plot(index, df_cdf, lwd = 2, type = 'l', xlim = c(0, 11000),
+     xlab = 'inherited age (debris flows)',
+     ylab = 'proportion <= age')  # empiric cdf
+lines(index, df_cdfs_cis[1,], lty = 2, col = 'coral3', lwd = 2)  # lower 97.5% CI
+lines(index, df_cdfs_cis[3,], lty = 2, col = 'coral3', lwd = 2)  # upper 97.5% CI
+lines(index, unlist(df_ph_cdf), lty = 2, col = 'slateblue', lwd = 2)  # phase-type fit
+
+```
+
+
+I used the KPC Toolbox in Matlab to fit the empirical distribution of inherited age to a number of continuous distributions, namely the exponential, gamma, Weibull and phase-type distributions.  We used the Kuiper statistic and Kolomogorov-Smirnov test to reject the exponential, gamma and Weibull distributions.  Prony's method provided the distrubtion with the best goodness of fit statistic for debris flows, while the Weibull distribution provided the best fit for fluvial fines and fluvial gravels.
+
+Using the fit distributions for inherited age for each facies, I then estimate the residence time of deposits with only one sample by subtracting the inherited age distribution from the sample age PMF using convolution.  In the `charcoal` dataset, where samples are arranged from youngest to oldest mean estimed sample age, we can compare the difference between esimated mean sample age and estimated mean residence time to illustrate the general size of the inherited age correction.
+
+```{r, fig.cap = 'debris flows in green, fluvial fines in blue, fluvial gravels in red'}
+# expected mean residence time of corrected pmfs
+cor_mns <- vector(ncol(cor_pmfs), mode = 'numeric')
+for (i in 1:ncol(cor_pmfs))  {
+  cor_mns[i] <- weighted.mean(index, cor_pmfs[,i])
+}
+
+# difference in uncorrected and corrected mean residence times
+mn_difs <- charcoal$mn - cor_mns
+
+# plot residence time differences colored by facies
+df_difs <- vector(length(mn_difs), mode = 'numeric')
+ff_difs <- vector(length(mn_difs), mode = 'numeric')
+fg_difs <- vector(length(mn_difs), mode = 'numeric')
+
+df_difs[charcoal$facies == 'DF'] <- mn_difs[charcoal$facies == 'DF']
+df_difs[charcoal$facies != 'DF'] <- NA
+ff_difs[charcoal$facies == 'FF'] <- mn_difs[charcoal$facies == 'FF']
+ff_difs[charcoal$facies != 'FF'] <- NA
+fg_difs[charcoal$facies == 'FG'] <- mn_difs[charcoal$facies == 'FG']
+fg_difs[charcoal$facies != 'FG'] <- NA
+
+plot(fg_difs, pch = 20, col = 'coral3',
+     xlab = 'sample id', ylab = 'mean res time correction')
+points(ff_difs, pch = 20, col = 'slateblue')
+points(df_difs, pch = 20, col = 'forestgreen')
+
+```
+
+In the same manner as for inherited age, I used the KPC Toolbox in Matlab to fit the empirical distribution of residence times for each facies to a number of continuous distributions, using the Kuiper statistic and K-S test to determine goodness of fit.
+
+## Estimating Flux
+
+My initial approach has been to take a broad budgetary strategy to estimate the amount of sediment moving through the valley.  Assuming the amount of sediment in the valley is in a longterm steady state (not necessarily true), the amount of sediment leaving the stream must be equal to the amount coming in to replace it.  This approach is intended as a crude first attempt while we devise a more subtle and effective method to partition the sample space.
+
+Using the corrected hipchain distances between transects and the sediment wedge areas, I first estimate segment volume between transects.  While the field researchers recorded the debris fraction of each facies at radiocarbon sample sites, they did not record bank stratigraphy at transects.  Moreover, because they carefully randomly selected positions for radiocarbon sampling, these positions do not correspond to the locations of transects, and at best are near transects, so it is difficult to intuit from bank stratigraphy records the relative debris fraction of segments between transects.
+
+While crude and unsatisfying, I estimate the fraction of debris flow as the total fraction of debris flow recorded in bank stratigraphy, and multiply this by total valley sediment volume to get a total debris flow deposit volume.  I then estimate total debris flow flux by dividing the deposit volume by the mean residence time of debris flows corrected for inherited age.  Again, while it is unsatisfying to use the mean, it is problematic to partition residence times across transect space for the same reason that we cannot infer debris fraction from the bank stratigraphy record.  Furthermore, only a portion of radiocarbon samples occur in Knowles Creek.  Geolocating Bear, Cedar and Golden Ridge creeks is problematic due to a lack of GPS references in the field notes, and may require revisiting the sites to incorporate.
+
+We can inspect the relation between estimated flux at nodes and the unweighted Miller/Burnett delivery probabilities, and I have added a linear fit to the graph, although a linear fit is not necessarily the best model choice.  We can use the relation between weighted M/B delivery probabilites and estimated flux rates as a weighting function to predict flux across streams in the Siuslaw watershed where we have M/B delivery probabilites but no transect data.
+
+```{r, fig.cap='sample sites in red, linear fit in black, average per node in blue'}
+
+# estimate valley sediment volume #
+
+t_dist <- 0  # distance between transects
+seg_vol <- 0  # segment volume
+for (i in 2:nrow(kn_vol))	{
+  t_dist[i] <- kn_vol$corrected_hipchain[i] - kn_vol$corrected_hipchain[i-1]
+  seg_vol[i] <- kn_vol$total_area_m2[(i-1):i] %>% sum / 2 * t_dist[i]
+}
+
+tot_vol <- seg_vol %>% sum
+
+# debris flow pct by bank height
+
+bank_ht <- (knowles_samples$coarse_fluvial_m +
+              knowles_samples$fine_alluvium_m +
+              knowles_samples$df_deposit_m) %>% sum
+
+df_ht <- knowles_samples$df_deposit_m %>% sum
+
+# total debris flow volume (volume x pct debris flow)
+df_vol <- tot_vol * df_ht / bank_ht
+
+
+df_mn_res <- weighted.mean(index, res_times[,2])
+ff_mn_res <- weighted.mean(index, res_times[,3])
+fg_mn_res <- weighted.mean(index, res_times[,4])
+
+# total debris flow flux over mean residence time
+df_ann <- df_vol / df_mn_res
+
+# expected debris flow flux per year
+df_flux <- rel_p * df_ann
+
+ave_df1 <- mean(df_flux)
+ave_df2 <- df_ann / length(transects)
+
+plot(transects$DebrisFlow, df_flux, pch = 20, 
+     col =rgb(red=1, green=0, blue=.2, alpha=.5),
+     xlab = 'M/B Delivery Probability',
+     ylab = 'Sediment Flux [m3/yr]')
+abline(lm(df_flux ~ transects$DebrisFlow))
+abline(h = ave_df1, lty = 2, col = 'slateblue')
+
+
+```
+
+## Next Steps
+
+Improve the method for estimating debris flow fraction by partitioning deposit fractions across the transect space.
+
+Improve the method for estimating debris flow residence time by partitioning residence times across the transect space.
+
+Model the relation between weighted delivery probabilities and unweighted probabilities, and use as a weighting function to estimate flux from unweighted probabiltiies.
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -58,6 +58,9 @@
 <li>
       <a href="../articles/horsetrader.html">horsetrader</a>
     </li>
+    <li>
+      <a href="../articles/summer2019_update.html">summer2019_update</a>
+    </li>
   </ul>
 </li>
       </ul>
@@ -76,7 +79,7 @@
       <h1>muddier</h1>
                         <h4 class="author">Erik Rose</h4>
             
-            <h4 class="date">2019-04-07</h4>
+            <h4 class="date">2019-08-19</h4>
       
       
       <div class="hidden name"><code>muddier.Rmd</code></div>
@@ -320,13 +323,9 @@ fgc_ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdo
 <a href="#truncation-at-zero" class="anchor"></a>Truncation at Zero</h2>
 <p>The inherited age convolutions include values below zero. This occurs in the specific case of subtracting the youngest age from itself, which creates a distribution centered on zero, and approximately half of the values in the PMF will be below zero. Because we know that inherited ages must be positive, we can truncate the pmf at zero by setting probabilities at values below zero to zero using the <code>trunc_0</code>. We then need to renormalize the truncated using the <code>normalize</code> function, or we can do both at once using the <code>trunc_norm</code> wrapper.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-trunc_list &lt;-<span class="st"> </span><span class="cf">function</span>(pmfs, <span class="dt">yrs=</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years))  {
-  <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(pmfs, <span class="cf">function</span>(a) <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(a, <span class="cf">function</span>(b) <span class="kw"><a href="../reference/trunc_norm.html">trunc_norm</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/numeric">as.numeric</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(b)), yrs)))
-}
-
-df_trc &lt;-<span class="st"> </span><span class="kw">trunc_list</span>(df_cl)
-ff_trc &lt;-<span class="st"> </span><span class="kw">trunc_list</span>(ff_cl)
-fg_trc &lt;-<span class="st"> </span><span class="kw">trunc_list</span>(fg_cl)
+df_trc &lt;-<span class="st"> </span><span class="kw"><a href="../reference/trunc_list.html">trunc_list</a></span>(df_cl)
+ff_trc &lt;-<span class="st"> </span><span class="kw"><a href="../reference/trunc_list.html">trunc_list</a></span>(ff_cl)
+fg_trc &lt;-<span class="st"> </span><span class="kw"><a href="../reference/trunc_list.html">trunc_list</a></span>(fg_cl)
 
 
 <span class="co"># </span><span class="al">TESTING</span><span class="co"> CODE #</span>
@@ -367,7 +366,6 @@ list_sums &lt;-<span class="st"> </span><span class="cf">function</span>(pmfs)  
 dft_sums &lt;-<span class="st"> </span><span class="kw">list_sums</span>(df_trc)
 dft_ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(dft_sums))
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Extremes">max</a></span>(dft_sums<span class="op">-</span>dft_ones)  <span class="co"># examine tolerance</span>
-<span class="co">#&gt; [1] 0</span>
 
 fft_sums &lt;-<span class="st"> </span><span class="kw">list_sums</span>(ff_trc)
 fft_ones &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/rep">rep</a></span>(<span class="dv">1</span>, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(fft_sums))
@@ -387,16 +385,15 @@ to_mat &lt;-<span class="st"> </span><span class="cf">function</span>(ls)  {
   <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/lapply">lapply</a></span>(ls, rack) <span class="op">%&gt;%</span><span class="st"> </span>rack
 }
 
-df_dt &lt;-<span class="st"> </span><span class="kw">to_mat</span>(df_trc) <span class="op">%&gt;%</span><span class="st"> </span>rowSums <span class="op">%&gt;%</span><span class="st"> </span>normalize
-ff_dt &lt;-<span class="st"> </span><span class="kw">to_mat</span>(ff_trc) <span class="op">%&gt;%</span><span class="st"> </span>rowSums <span class="op">%&gt;%</span><span class="st"> </span>normalize
-fg_dt &lt;-<span class="st"> </span><span class="kw">to_mat</span>(fg_trc) <span class="op">%&gt;%</span><span class="st"> </span>rowSums <span class="op">%&gt;%</span><span class="st"> </span>normalize
+df_dt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_mat.html">to_mat</a></span>(df_trc) <span class="op">%&gt;%</span><span class="st"> </span>rowSums <span class="op">%&gt;%</span><span class="st"> </span>normalize
+ff_dt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_mat.html">to_mat</a></span>(ff_trc) <span class="op">%&gt;%</span><span class="st"> </span>rowSums <span class="op">%&gt;%</span><span class="st"> </span>normalize
+fg_dt &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_mat.html">to_mat</a></span>(fg_trc) <span class="op">%&gt;%</span><span class="st"> </span>rowSums <span class="op">%&gt;%</span><span class="st"> </span>normalize
 
 
 <span class="co"># plot results</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), df_dt, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'brown'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">11000</span>), <span class="dt">main =</span> <span class="st">'DF Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'pmf'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), ff_dt, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">4000</span>), <span class="dt">main =</span> <span class="st">'FF Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'pmf'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), fg_dt, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">10000</span>), <span class="dt">main =</span> <span class="st">'FG Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'pmf'</span>)</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-9-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-9-2.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-9-3.png" width="700"></p>
 <p>While <code>muddier</code> uses pmfs to represent pdfs to perform convolution, the results are often easier to consume as cdfs or log exceedance graphs. The <code>to_cdf</code> and <code>to_exceed</code> functions convert pmfs to cdfs and log10 exceedance value respectively.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># convert pmfs to cdfs</span>
 df_cdf &lt;-<span class="st"> </span>df_dt <span class="op">%&gt;%</span><span class="st"> </span>to_cdf
@@ -407,7 +404,6 @@ fg_cdf &lt;-<span class="st"> </span>fg_dt <span class="op">%&gt;%</span><span c
 df_exc &lt;-<span class="st"> </span>df_dt <span class="op">%&gt;%</span><span class="st"> </span>to_exceed
 ff_exc &lt;-<span class="st"> </span>ff_dt <span class="op">%&gt;%</span><span class="st"> </span>to_exceed
 fg_exc &lt;-<span class="st"> </span>fg_dt <span class="op">%&gt;%</span><span class="st"> </span>to_exceed
-<span class="co">#&gt; Warning in to_exceed(.): NaNs produced</span>
 
 <span class="co"># plot results</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), df_cdf, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'brown'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">11000</span>), <span class="dt">ylim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">1</span>), <span class="dt">main =</span> <span class="st">'DF Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'cdf'</span>)
@@ -416,7 +412,6 @@ fg_exc &lt;-<span class="st"> </span>fg_dt <span class="op">%&gt;%</span><span c
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), ff_exc, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">4000</span>), <span class="dt">main =</span> <span class="st">'FF Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'log10 exc'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), fg_cdf, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">10000</span>), <span class="dt">main =</span> <span class="st">'FG Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'cdf'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), fg_exc, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>, <span class="dt">xlim =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="dv">0</span>,<span class="dv">10000</span>), <span class="dt">main =</span> <span class="st">'FG Inherited Age'</span>, <span class="dt">xlab =</span> <span class="st">'inherited age'</span>, <span class="dt">ylab =</span> <span class="st">'log10 exc'</span>)</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-10-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-10-2.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-10-3.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-10-4.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-10-5.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-10-6.png" width="700"></p>
 </div>
 <div id="bootstrapping-cis" class="section level2">
 <h2 class="hasAnchor">
@@ -442,7 +437,7 @@ dfb_pmf_cis &lt;-<span class="st"> </span><span class="kw"><a href="https://www.
 dfb_cdf &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(dfb_pmf, <span class="dv">2</span>, to_cdf)
 dfb_cdf_cis &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(dfb_cdf, <span class="dv">1</span>, get_cis)
 
-dfb_exc &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/warning">suppressWarnings</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(dfb_pmf, <span class="dv">2</span>, to_exceed)) 
+dfb_exc &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(dfb_pmf, <span class="dv">2</span>, to_exceed) 
 dfb_exc_cis &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/apply">apply</a></span>(dfb_exc, <span class="dv">1</span>, get_cis)
 
 <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/colnames">rownames</a></span>(dfb_pmf_cis) &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'lwr'</span>,<span class="st">'med'</span>,<span class="st">'upr'</span>)
@@ -469,7 +464,6 @@ dfb_exc_cis &lt;-<span class="st"> </span><span class="kw"><a href="https://www.
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), dfb_exc_cis[<span class="dv">1</span>,], <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(years), df_exc, <span class="dt">lwd =</span> <span class="dv">3</span>, <span class="dt">col =</span> <span class="st">'goldenrod'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'topright'</span>, <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'obs'</span>,<span class="st">'upr'</span>,<span class="st">'med'</span>,<span class="st">'lwr'</span>), <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'goldenrod'</span>, <span class="st">'brown'</span>, <span class="st">'black'</span>, <span class="st">'slateblue'</span>))</code></pre></div>
-<p><img src="muddier_files/figure-html/unnamed-chunk-11-1.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-11-2.png" width="700"><img src="muddier_files/figure-html/unnamed-chunk-11-3.png" width="700"></p>
 </div>
   </div>
 

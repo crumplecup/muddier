@@ -253,8 +253,7 @@ test_that('pmfs in char_pmfs sum to 1', {
 
 The inherited age convolutions include values below zero.  This occurs in the specific case of subtracting the youngest age from itself, which creates a distribution centered on zero, and approximately half of the values in the PMF will be below zero.  Because we know that inherited ages must be positive, we can truncate the pmf at zero by setting probabilities at values below zero to zero using the `trunc_0`.  We then need to renormalize the truncated using the `normalize` function, or we can do both at once using the `trunc_norm` wrapper.
 
-```{r}
-
+```{r, eval = F}
 
 df_trc <- trunc_list(df_cl)
 ff_trc <- trunc_list(ff_cl)
@@ -319,7 +318,7 @@ The use of data.tables enables easy application of nested `lapply` functions.  I
 
 The convenience function `rack` converts a list or data.table to a matrix by cbind, provided the elements of the list are of equal length.  The pmfs are stored in row values with observations by column, so after racking the list into a large matrix, we can sum the distributions using `rowSums` and renormalize using `normalize`.
 
-```{r, fig.show='hold'}
+```{r, fig.show='hold', eval = F}
 # convert from list of data.tables to matrix
 to_mat <- function(ls)  {
   lapply(ls, rack) %>% rack
@@ -338,7 +337,7 @@ plot(sort(years), fg_dt, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,10
 
 While `muddier` uses pmfs to represent pdfs to perform convolution, the results are often easier to consume as cdfs or log exceedance graphs.  The `to_cdf` and `to_exceed` functions convert pmfs to cdfs and log10 exceedance value respectively.
 
-```{r, fig.show='hold'}
+```{r, fig.show='hold', eval=F}
 # convert pmfs to cdfs
 df_cdf <- df_dt %>% to_cdf
 ff_cdf <- ff_dt %>% to_cdf
@@ -364,7 +363,7 @@ plot(sort(years), fg_exc, type = 'l', lwd = 3, col = 'forestgreen', xlim = c(0,1
 
 
 
-```{r, fig.show='hold'}
+```{r, fig.show='hold', eval = F}
 library(parallel)
 options(mc.cores=detectCores())
 set.seed(10101)

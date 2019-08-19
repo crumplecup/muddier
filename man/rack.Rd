@@ -4,13 +4,13 @@
 \alias{rack}
 \title{Rack List}
 \usage{
-rack(lis)
+rack(ls)
 }
 \arguments{
-\item{lis}{is a list with elements of equal length}
+\item{ls}{is a list with elements of equal length}
 }
 \value{
-elements of `lis` column bound into a matrix
+elements of `ls` column bound into a matrix
 }
 \description{
 Rack list with elements of equal length into a matrix using cbind
