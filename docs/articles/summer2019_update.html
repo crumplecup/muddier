@@ -79,7 +79,7 @@
       <h1>summer2019_update</h1>
                         <h4 class="author">Erik Rose</h4>
             
-            <h4 class="date">2019-08-19</h4>
+            <h4 class="date">2019-08-22</h4>
       
       
       <div class="hidden name"><code>summer2019_update.Rmd</code></div>
@@ -105,11 +105,11 @@
 
 <span class="co"># the linked-node network for knowles creek is 'knowles'</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(knowles, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>, <span class="dt">xlab =</span> <span class="st">'knowles creek'</span>)</code></pre></div>
-<p><img src="summer2019_update_files/figure-html/unnamed-chunk-1-1.png" width="1093.75"></p>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-1-1.png" width="700"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 <span class="co"># nodes consist of contiguous pixel corners</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(knowles[<span class="dv">250</span><span class="op">:</span><span class="dv">265</span>,], <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>, <span class="dt">xlab =</span> <span class="st">'zoomed in on nodes'</span>)</code></pre></div>
-<p><img src="summer2019_update_files/figure-html/unnamed-chunk-1-2.png" width="1093.75"></p>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-1-2.png" width="700"></p>
 </div>
 <div id="georeferencing-knowles-creek" class="section level2">
 <h2 class="hasAnchor">
@@ -135,32 +135,10 @@
 <p>Survey data at transects include valley sediment wedge area and contributing area. For nodes lying between transects, I estimate sediment wedge area and contributing area by linear interpolation. The Lancaster survey covers a channel segment consisting of 327 nodes, which I have saved into the <code>muddier</code> package as the object <code>transects</code>.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(knowles, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(transects, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(landmarks[ , <span class="dv">1</span><span class="op">:</span><span class="dv">2</span>], <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>)</code></pre></div>
-<div class="figure">
-<img src="summer2019_update_files/figure-html/unnamed-chunk-3-1.png" alt="knowles in blue, transects in green, landmarks in red" width="1093.75"><p class="caption">
-knowles in blue, transects in green, landmarks in red
-</p>
-</div>
-<p>During the transect survey, the field researchers selected transect positions that captured inflections in the valley contour. By recording the depth of sediment across the transect, the researcher can estimate the volume of sediment in a valley area by linear interpolation due to careful selection of transect position to represent the valley contour.</p>
-<p>Comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows poor correlation between delivery probabilties and sediment deposition along the channel. In a similar manner to how Miller &amp; Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model.</p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>area, transects<span class="op">$</span>DebrisFlow, 
-     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span><span class="dv">1</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">2</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
-     <span class="dt">xlab=</span><span class="st">'Cross-sectional Area (m2)'</span>,<span class="dt">ylab=</span><span class="st">'Delivery Probability'</span> )
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(transects<span class="op">$</span>DebrisFlow <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>area),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
-<p><img src="summer2019_update_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
-<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-<span class="co"># weight delivery probs by transect deposit volumes</span>
-
-sum_area &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>area)  <span class="co"># total area</span>
-area_wt &lt;-<span class="st"> </span>transects<span class="op">$</span>area <span class="op">/</span><span class="st"> </span>sum_area  <span class="co"># vector of weights</span>
-area_p &lt;-<span class="st"> </span>transects<span class="op">$</span>dfprob <span class="op">*</span><span class="st"> </span>area_wt  <span class="co"># weighted probs</span>
-rel_p &lt;-<span class="st"> </span>area_p <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(area_p)  <span class="co"># normalized weighted probs</span>
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>area, rel_p, 
-     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span><span class="dv">1</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">2</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
-     <span class="dt">xlab=</span><span class="st">'Cross-sectional Area (m2)'</span>,<span class="dt">ylab=</span><span class="st">'Weighted Delivery Probability'</span> )
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(rel_p <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>area),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
-<p><img src="summer2019_update_files/figure-html/unnamed-chunk-4-2.png" width="700"></p>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(landmarks[ , <span class="dv">1</span><span class="op">:</span><span class="dv">2</span>], <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'bottomleft'</span>, <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'knowles creek'</span>, <span class="st">'transects'</span>, <span class="st">'landmarks'</span>),
+       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'slateblue'</span>, <span class="st">'forestgreen'</span>, <span class="st">'coral3'</span>))</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-3-1.png" width="700"></p>
 </div>
 <div id="debris-flow-residence-times" class="section level2">
 <h2 class="hasAnchor">
@@ -176,12 +154,10 @@ index &lt;-<span class="st"> </span>char_pmfs <span class="op">%&gt;%</span><spa
      <span class="dt">ylab =</span> <span class="st">'proportion &lt;= age'</span>)  <span class="co"># empiric cdf</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(index, df_cdfs_cis[<span class="dv">1</span>,], <span class="dt">lty =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>)  <span class="co"># lower 97.5% CI</span>
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(index, df_cdfs_cis[<span class="dv">3</span>,], <span class="dt">lty =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>)  <span class="co"># upper 97.5% CI</span>
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(index, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(df_ph_cdf), <span class="dt">lty =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>)  <span class="co"># phase-type fit</span></code></pre></div>
-<div class="figure">
-<img src="summer2019_update_files/figure-html/unnamed-chunk-5-1.png" alt="empiric cdf in black, bootstrapped CIs in red, phase-type fit in blue" width="700"><p class="caption">
-empiric cdf in black, bootstrapped CIs in red, phase-type fit in blue
-</p>
-</div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(index, <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/unlist">unlist</a></span>(df_ph_cdf), <span class="dt">lty =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>)  <span class="co"># phase-type fit</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'bottomright'</span>, <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'empiric'</span>, <span class="st">'95% CIs'</span>, <span class="st">'phase-type fit'</span>),
+       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'black'</span>, <span class="st">'coral3'</span>, <span class="st">'slateblue'</span>))</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-4-1.png" width="700"></p>
 <p>I used the KPC Toolbox in Matlab to fit the empirical distribution of inherited age to a number of continuous distributions, namely the exponential, gamma, Weibull and phase-type distributions. We used the Kuiper statistic and Kolomogorov-Smirnov test to reject the exponential, gamma and Weibull distributions. Prony’s method provided the distrubtion with the best goodness of fit statistic for debris flows, while the Weibull distribution provided the best fit for fluvial fines and fluvial gravels.</p>
 <p>Using the fit distributions for inherited age for each facies, I then estimate the residence time of deposits with only one sample by subtracting the inherited age distribution from the sample age PMF using convolution. In the <code>charcoal</code> dataset, where samples are arranged from youngest to oldest mean estimed sample age, we can compare the difference between esimated mean sample age and estimated mean residence time to illustrate the general size of the inherited age correction.</p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="co"># expected mean residence time of corrected pmfs</span>
@@ -206,78 +182,200 @@ fg_difs[charcoal<span class="op">$</span>facies <span class="op">==</span><span 
 fg_difs[charcoal<span class="op">$</span>facies <span class="op">!=</span><span class="st"> 'FG'</span>] &lt;-<span class="st"> </span><span class="ot">NA</span>
 
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(fg_difs, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>,
-     <span class="dt">xlab =</span> <span class="st">'sample id'</span>, <span class="dt">ylab =</span> <span class="st">'mean res time correction'</span>)
+     <span class="dt">xlab =</span> <span class="st">'sample id'</span>, <span class="dt">ylab =</span> <span class="st">'mean inherited age'</span>)
 <span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(ff_difs, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(df_difs, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)</code></pre></div>
-<div class="figure">
-<img src="summer2019_update_files/figure-html/unnamed-chunk-6-1.png" alt="debris flows in green, fluvial fines in blue, fluvial gravels in red" width="700"><p class="caption">
-debris flows in green, fluvial fines in blue, fluvial gravels in red
-</p>
-</div>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/points">points</a></span>(df_difs, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'topleft'</span>, <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'debris flows'</span>, <span class="st">'fluvial fines'</span>, <span class="st">'fluvial gravels'</span>),
+       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'forestgreen'</span>, <span class="st">'slateblue'</span>, <span class="st">'coral3'</span>))</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-5-1.png" width="700"></p>
 <p>In the same manner as for inherited age, I used the KPC Toolbox in Matlab to fit the empirical distribution of residence times for each facies to a number of continuous distributions, using the Kuiper statistic and K-S test to determine goodness of fit.</p>
 </div>
-<div id="estimating-flux" class="section level2">
+<div id="examining-delivery-probabilities" class="section level2">
 <h2 class="hasAnchor">
-<a href="#estimating-flux" class="anchor"></a>Estimating Flux</h2>
-<p>My initial approach has been to take a broad budgetary strategy to estimate the amount of sediment moving through the valley. Assuming the amount of sediment in the valley is in a longterm steady state (not necessarily true), the amount of sediment leaving the stream must be equal to the amount coming in to replace it. This approach is intended as a crude first attempt while we devise a more subtle and effective method to partition the sample space.</p>
-<p>Using the corrected hipchain distances between transects and the sediment wedge areas, I first estimate segment volume between transects. While the field researchers recorded the debris fraction of each facies at radiocarbon sample sites, they did not record bank stratigraphy at transects. Moreover, because they carefully randomly selected positions for radiocarbon sampling, these positions do not correspond to the locations of transects, and at best are near transects, so it is difficult to intuit from bank stratigraphy records the relative debris fraction of segments between transects.</p>
-<p>While crude and unsatisfying, I estimate the fraction of debris flow as the total fraction of debris flow recorded in bank stratigraphy, and multiply this by total valley sediment volume to get a total debris flow deposit volume. I then estimate total debris flow flux by dividing the deposit volume by the mean residence time of debris flows corrected for inherited age. Again, while it is unsatisfying to use the mean, it is problematic to partition residence times across transect space for the same reason that we cannot infer debris fraction from the bank stratigraphy record. Furthermore, only a portion of radiocarbon samples occur in Knowles Creek. Geolocating Bear, Cedar and Golden Ridge creeks is problematic due to a lack of GPS references in the field notes, and may require revisiting the sites to incorporate.</p>
-<p>We can inspect the relation between estimated flux at nodes and the unweighted Miller/Burnett delivery probabilities, and I have added a linear fit to the graph, although a linear fit is not necessarily the best model choice. We can use the relation between weighted M/B delivery probabilites and estimated flux rates as a weighting function to predict flux across streams in the Siuslaw watershed where we have M/B delivery probabilites but no transect data.</p>
+<a href="#examining-delivery-probabilities" class="anchor"></a>Examining Delivery Probabilities</h2>
+<p>During the transect survey, the field researchers selected transect positions that captured inflections in the valley contour. By recording the depth of sediment across the transect, the researcher can estimate the volume of sediment in a valley area by linear interpolation due to careful selection of transect position to represent the valley contour.</p>
+<p>In a similar manner to how Miller &amp; Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model. However, comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows poor correlation between delivery probabilties and sediment deposition along the channel. Examining the relation between delivery probabilities and slope, contributing area, top valley width, and area-slope product showed similarly poor correlation, with only slope showing mildly positive correlation.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r"><span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>DebrisFlow, transects<span class="op">$</span>area,
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span><span class="dv">1</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">2</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
+     <span class="dt">ylab=</span><span class="st">'Cross-sectional Area (m2)'</span>, <span class="dt">xlab=</span><span class="st">'Delivery Probability'</span> )
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(transects<span class="op">$</span>area <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>DebrisFlow),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-6-1.png" width="700"></p>
 <div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
-<span class="co"># estimate valley sediment volume #</span>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>DebrisFlow, transects<span class="op">$</span>GRADIENT,
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span><span class="dv">0</span>, <span class="dt">green=</span>.<span class="dv">2</span>, <span class="dt">blue=</span><span class="dv">1</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
+     <span class="dt">ylab=</span><span class="st">'Slope'</span>, <span class="dt">xlab=</span><span class="st">'Delivery Probability'</span> )
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(transects<span class="op">$</span>GRADIENT <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>DebrisFlow),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-6-2.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>DebrisFlow, transects<span class="op">$</span>contr,
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">1</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
+     <span class="dt">ylab=</span><span class="st">'Contributing Area (km2)'</span>,<span class="dt">xlab=</span><span class="st">'Delivery Probability'</span> )
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(transects<span class="op">$</span>contr <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>DebrisFlow),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-6-3.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+area_slope &lt;-<span class="st"> </span>transects<span class="op">$</span>GRADIENT <span class="op">*</span><span class="st"> </span>transects<span class="op">$</span>contr
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>DebrisFlow, area_slope,
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span><span class="dv">1</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
+     <span class="dt">ylab=</span><span class="st">'Contr Area * Slope'</span>,<span class="dt">xlab=</span><span class="st">'Delivery Probability'</span> )
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(area_slope <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>DebrisFlow),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-6-4.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>DebrisFlow, transects<span class="op">$</span>top,
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>), <span class="dt">pch=</span><span class="dv">20</span>,
+     <span class="dt">ylab=</span><span class="st">'Top Valley Width (m)'</span>,<span class="dt">xlab=</span><span class="st">'Delivery Probability'</span> )
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(transects<span class="op">$</span>top <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>DebrisFlow),<span class="dt">col=</span><span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-6-5.png" width="700"></p>
+</div>
+<div id="weighting-delivery-probabilities" class="section level2">
+<h2 class="hasAnchor">
+<a href="#weighting-delivery-probabilities" class="anchor"></a>Weighting Delivery Probabilities</h2>
+<p>Let <span class="math inline">\(P\)</span> represent delivery probabilities, and let <span class="math inline">\(F_P (P_0)\)</span> be the CDF of delivery probabilities. Let <span class="math inline">\(V\)</span> represent depositional volume, and let <span class="math inline">\(F_V (P_0)\)</span> be the CDF of volume with respect to <span class="math inline">\(P\)</span>. The volume weighting function <span class="math inline">\(wt_V\)</span> over an interval <span class="math inline">\(P_i\)</span> to <span class="math inline">\(P_{i + 1}\)</span> along <span class="math inline">\(P\)</span> is:</p>
+<p><span class="math display">\[ wt_V (P_i, P_{i+1}) = \frac{F_V (P_{i+1}) - F_V (P_i)}{F_P (P_{i+1}) - F_P (P_i)} \]</span></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="co"># weighting function for delivery probs</span>
 
-t_dist &lt;-<span class="st"> </span><span class="dv">0</span>  <span class="co"># distance between transects</span>
-seg_vol &lt;-<span class="st"> </span><span class="dv">0</span>  <span class="co"># segment volume</span>
-<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/nrow">nrow</a></span>(kn_vol))   {
-  t_dist[i] &lt;-<span class="st"> </span>kn_vol<span class="op">$</span>corrected_hipchain[i] <span class="op">-</span><span class="st"> </span>kn_vol<span class="op">$</span>corrected_hipchain[i<span class="op">-</span><span class="dv">1</span>]
-  seg_vol[i] &lt;-<span class="st"> </span>kn_vol<span class="op">$</span>total_area_m2[(i<span class="op">-</span><span class="dv">1</span>)<span class="op">:</span>i] <span class="op">%&gt;%</span><span class="st"> </span>sum <span class="op">/</span><span class="st"> </span><span class="dv">2</span> <span class="op">*</span><span class="st"> </span>t_dist[i]
+<span class="co"># delivery prob index</span>
+p_index &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sort">sort</a></span>(transects<span class="op">$</span>dfprob)
+
+<span class="co"># cdf of delivery probs</span>
+p_cdf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_cdf.html">to_cdf</a></span>(p_index<span class="op">/</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(p_index))
+
+<span class="co"># change in delivery prob cdf per change in index</span>
+delta_p &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(delta_p))  {
+  delta_p[i] &lt;-<span class="st"> </span>p_cdf[i] <span class="op">-</span><span class="st"> </span>p_cdf[i<span class="op">-</span><span class="dv">1</span>]
 }
 
-tot_vol &lt;-<span class="st"> </span>seg_vol <span class="op">%&gt;%</span><span class="st"> </span>sum
+<span class="co"># cdf of volume by prob index</span>
+v_cdf &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(v_cdf))  {
+  v_cdf[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>area[transects<span class="op">$</span>dfprob <span class="op">&lt;=</span><span class="st"> </span>p_index[i]]) <span class="op">/</span>
+<span class="st">    </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>area)
+}
 
-<span class="co"># debris flow pct by bank height</span>
+<span class="co"># change in volume cdf per change in index</span>
+delta_v &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(delta_v))  {
+  delta_v[i] &lt;-<span class="st"> </span>v_cdf[i] <span class="op">-</span><span class="st"> </span>v_cdf[i<span class="op">-</span><span class="dv">1</span>]
+}
 
-bank_ht &lt;-<span class="st"> </span>(knowles_samples<span class="op">$</span>coarse_fluvial_m <span class="op">+</span>
-<span class="st">              </span>knowles_samples<span class="op">$</span>fine_alluvium_m <span class="op">+</span>
-<span class="st">              </span>knowles_samples<span class="op">$</span>df_deposit_m) <span class="op">%&gt;%</span><span class="st"> </span>sum
+<span class="co"># change in volume cdf per change in del prob cdf</span>
+p_wt &lt;-<span class="st"> </span>delta_v <span class="op">/</span><span class="st"> </span>delta_p
+p_wt_cdf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_cdf.html">to_cdf</a></span>(p_wt[<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(p_wt[<span class="op">-</span><span class="dv">1</span>]))
 
-df_ht &lt;-<span class="st"> </span>knowles_samples<span class="op">$</span>df_deposit_m <span class="op">%&gt;%</span><span class="st"> </span>sum
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index, p_wt, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>),
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>, <span class="dt">ylab =</span> <span class="st">'F(V)/F(P)'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(p_wt <span class="op">~</span><span class="st"> </span>p_index), <span class="dt">col =</span> <span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-7-1.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index[<span class="op">-</span><span class="dv">1</span>], p_wt_cdf, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>,
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>, <span class="dt">ylab =</span> <span class="st">'cdf'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(p_index, v_cdf, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(p_index, p_cdf, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'bottomright'</span>, 
+       <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'delivery prob F(P)'</span>, <span class="st">'volume F(V)'</span>, <span class="st">'F(V)/F(P)'</span>),
+       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'forestgreen'</span>, <span class="st">'coral3'</span>, <span class="st">'slateblue'</span>))</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-7-2.png" width="700"></p>
+<div id="weighting-by-area-slope-relation" class="section level3">
+<h3 class="hasAnchor">
+<a href="#weighting-by-area-slope-relation" class="anchor"></a>Weighting by Area-Slope Relation</h3>
+<p>We can fit the area-slope relation to a power law where slope <span class="math inline">\(S\)</span> relates to contributing area <span class="math inline">\(A\)</span> by the function:</p>
+<p><span class="math display">\[ S = k_sA^{-\theta}  \]</span></p>
+<p>We can relate logged slope to logged contributing area using a linear model, so that:</p>
+<p><span class="math display">\[  log(S) = log(k_sA^{-\theta})  \]</span> <span class="math display">\[  log(S) = log(k_s) - \theta log(A)  \]</span> We can estimate <span class="math inline">\(\theta\)</span> as the slope of a linear model with intercept <span class="math inline">\(log(k_s)\)</span>. Based upon the estimated <span class="math inline">\(\theta\)</span> we can then calculate an individual <span class="math inline">\(k_s\)</span> for each channel node.</p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
 
-<span class="co"># total debris flow volume (volume x pct debris flow)</span>
-df_vol &lt;-<span class="st"> </span>tot_vol <span class="op">*</span><span class="st"> </span>df_ht <span class="op">/</span><span class="st"> </span>bank_ht
+<span class="co"># find ks values in S = ks(A^theta)</span>
+lslope &lt;-<span class="st"> </span>transects<span class="op">$</span>GRADIENT <span class="op">%&gt;%</span><span class="st"> </span>log  <span class="co"># logged slope</span>
+lcontr &lt;-<span class="st"> </span>transects<span class="op">$</span>contr <span class="op">%&gt;%</span><span class="st"> </span>log <span class="co"># logged contr area</span>
+
+as_mod &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(lslope <span class="op">~</span><span class="st"> </span>lcontr)  <span class="co"># fit AS to power law</span>
+as_theta &lt;-<span class="st"> </span>as_mod<span class="op">$</span>coefficients[<span class="dv">2</span>]  <span class="co"># pull theta value</span>
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(lcontr, lslope, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>),
+     <span class="dt">xlab =</span> <span class="st">'log(contributing area)'</span>, <span class="dt">ylab =</span> <span class="st">'log(slope)'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(as_mod, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'goldenrod'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/sp/topics/gridlines">text</a></span>(<span class="dv">1</span>,<span class="op">-</span><span class="dv">2</span>, <span class="st">'R2 = 0.78'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-8-1.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="co"># estimate individual ks values using pulled theta</span>
+log_ks &lt;-<span class="st"> </span>lslope <span class="op">-</span><span class="st"> </span>as_theta <span class="op">*</span><span class="st"> </span>lcontr
+ks &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/Log">exp</a></span>(log_ks)
+transects<span class="op">$</span>p_ks &lt;-<span class="st"> </span>transects<span class="op">$</span>dfprob <span class="op">/</span><span class="st"> </span>ks
+
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index, ks, <span class="dt">pch =</span> <span class="dv">20</span>, <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>),
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-8-2.png" width="700"></p>
+<p>Using the ratio of <span class="math inline">\(P/k_s\)</span>, let <span class="math inline">\(F_{P/k_s}(P_0)\)</span> be the CDF of <span class="math inline">\(P/k_s\)</span> with respect to <span class="math inline">\(P\)</span>. We can then compare change in the CDF of <span class="math inline">\(P/k_s\)</span> to change in the CDF of <span class="math inline">\(P\)</span>. The <span class="math inline">\(P/k_s\)</span> weighting function <span class="math inline">\(wt_{P/k_s}\)</span> over an interval <span class="math inline">\(P_i\)</span> to <span class="math inline">\(P_{i + 1}\)</span> along <span class="math inline">\(P\)</span> is:</p>
+<p><span class="math display">\[ wt_{P/k_s} (P_i, P_{i+1}) = \frac{F_{P/k_s} (P_{i+1}) - F_{P/k_s} (P_i)}{F_P (P_{i+1}) - F_P (P_i)} \]</span></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index, transects<span class="op">$</span>p_ks, <span class="dt">pch =</span> <span class="dv">20</span>, 
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>),
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>, <span class="dt">ylab =</span> <span class="st">'P/ks'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(transects<span class="op">$</span>p_ks <span class="op">~</span><span class="st"> </span>p_index), <span class="dt">col =</span> <span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-9-1.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="co"># cdf of ks / pdel ratio over pdel</span>
+p_ks_cdf &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_ks_cdf))  {
+  p_ks_cdf[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>p_ks[transects<span class="op">$</span>dfprob <span class="op">&lt;=</span><span class="st"> </span>p_index[i]]) <span class="op">/</span>
+<span class="st">    </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>p_ks)
+}
+
+<span class="co"># change in p_ks cdf per change in index</span>
+delta_p_ks &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(delta_p_ks))  {
+  delta_p_ks[i] &lt;-<span class="st"> </span>p_ks_cdf[i] <span class="op">-</span><span class="st"> </span>p_ks_cdf[i<span class="op">-</span><span class="dv">1</span>]
+}
+
+<span class="co"># change in volume cdf per change in del prob cdf</span>
+p_ks_wt &lt;-<span class="st"> </span>delta_p_ks <span class="op">/</span><span class="st"> </span>delta_p
+p_ks_wt_cdf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_cdf.html">to_cdf</a></span>(p_ks_wt[<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(p_ks_wt[<span class="op">-</span><span class="dv">1</span>]))
 
 
-df_mn_res &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(index, res_times[,<span class="dv">2</span>])
-ff_mn_res &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(index, res_times[,<span class="dv">3</span>])
-fg_mn_res &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/weighted.mean">weighted.mean</a></span>(index, res_times[,<span class="dv">4</span>])
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index[<span class="op">-</span><span class="dv">1</span>], p_ks_wt_cdf, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>,
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>, <span class="dt">ylab =</span> <span class="st">'cdf'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(p_index, p_ks_cdf, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(p_index, p_cdf, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'bottomright'</span>, 
+       <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'delivery prob F(P)'</span>, <span class="st">'F(P/ks)'</span>, <span class="st">'F(P/ks)/F(P)'</span>),
+       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'forestgreen'</span>, <span class="st">'coral3'</span>, <span class="st">'slateblue'</span>))</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-9-2.png" width="700"></p>
+<p>We can follow the same procedure using top valley width, with distance <span class="math inline">\(D\)</span> representing valley width, let <span class="math inline">\(F_D (P_0)\)</span> be the CDF of <span class="math inline">\(D\)</span> with respect to <span class="math inline">\(P\)</span>. The valley width weighting function <span class="math inline">\(wt_D\)</span> over an interval <span class="math inline">\(P_i\)</span> to <span class="math inline">\(P_{i + 1}\)</span> along <span class="math inline">\(P\)</span> is:</p>
+<p><span class="math display">\[ wt_D (P_i, P_{i+1}) = \frac{F_D (P_{i+1}) - F_D (P_i)}{F_P (P_{i+1}) - F_P (P_i)} \]</span></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="co"># cdf of top width by prob index</span>
+top_cdf &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(top_cdf))  {
+  top_cdf[i] &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>top[transects<span class="op">$</span>dfprob <span class="op">&lt;=</span><span class="st"> </span>p_index[i]]) <span class="op">/</span>
+<span class="st">    </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(transects<span class="op">$</span>top)
+}
 
-<span class="co"># total debris flow flux over mean residence time</span>
-df_ann &lt;-<span class="st"> </span>df_vol <span class="op">/</span><span class="st"> </span>df_mn_res
+<span class="co"># change in top width cdf per change in index</span>
+delta_top &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/vector">vector</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(p_index), <span class="dt">mode =</span> <span class="st">'numeric'</span>)
+<span class="cf">for</span> (i <span class="cf">in</span> <span class="dv">2</span><span class="op">:</span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(delta_top))  {
+  delta_top[i] &lt;-<span class="st"> </span>top_cdf[i] <span class="op">-</span><span class="st"> </span>top_cdf[i<span class="op">-</span><span class="dv">1</span>]
+}
 
-<span class="co"># expected debris flow flux per year</span>
-df_flux &lt;-<span class="st"> </span>rel_p <span class="op">*</span><span class="st"> </span>df_ann
+<span class="co"># change in top width cdf per change in del prob cdf</span>
+top_wt &lt;-<span class="st"> </span>delta_top <span class="op">/</span><span class="st"> </span>delta_p
+top_wt_cdf &lt;-<span class="st"> </span><span class="kw"><a href="../reference/to_cdf.html">to_cdf</a></span>(top_wt[<span class="op">-</span><span class="dv">1</span>] <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/sum">sum</a></span>(top_wt[<span class="op">-</span><span class="dv">1</span>]))
 
-ave_df1 &lt;-<span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/mean">mean</a></span>(df_flux)
-ave_df2 &lt;-<span class="st"> </span>df_ann <span class="op">/</span><span class="st"> </span><span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/length">length</a></span>(transects)
-
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(transects<span class="op">$</span>DebrisFlow, df_flux, <span class="dt">pch =</span> <span class="dv">20</span>, 
-     <span class="dt">col =</span><span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span><span class="dv">1</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">2</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>),
-     <span class="dt">xlab =</span> <span class="st">'M/B Delivery Probability'</span>,
-     <span class="dt">ylab =</span> <span class="st">'Sediment Flux [m3/yr]'</span>)
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(df_flux <span class="op">~</span><span class="st"> </span>transects<span class="op">$</span>DebrisFlow))
-<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="dt">h =</span> ave_df1, <span class="dt">lty =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>)</code></pre></div>
-<div class="figure">
-<img src="summer2019_update_files/figure-html/unnamed-chunk-7-1.png" alt="sample sites in red, linear fit in black, average per node in blue" width="700"><p class="caption">
-sample sites in red, linear fit in black, average per node in blue
-</p>
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index, top_wt, <span class="dt">pch =</span> <span class="dv">20</span>, 
+     <span class="dt">col =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/grDevices/topics/rgb">rgb</a></span>(<span class="dt">red=</span>.<span class="dv">5</span>, <span class="dt">green=</span><span class="dv">0</span>, <span class="dt">blue=</span>.<span class="dv">7</span>, <span class="dt">alpha=</span>.<span class="dv">5</span>),
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>, <span class="dt">ylab =</span> <span class="st">'F(D)/F(P)'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/abline">abline</a></span>(<span class="kw"><a href="https://www.rdocumentation.org/packages/stats/topics/lm">lm</a></span>(top_wt <span class="op">~</span><span class="st"> </span>p_index), <span class="dt">col =</span> <span class="st">'gray'</span>)</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-10-1.png" width="700"></p>
+<div class="sourceCode"><pre class="sourceCode r"><code class="sourceCode r">
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/plot">plot</a></span>(p_index[<span class="op">-</span><span class="dv">1</span>], top_wt_cdf, <span class="dt">type =</span> <span class="st">'l'</span>, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'slateblue'</span>,
+     <span class="dt">xlab =</span> <span class="st">'delivery probability'</span>, <span class="dt">ylab =</span> <span class="st">'cdf'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(p_index, top_cdf, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'coral3'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/lines">lines</a></span>(p_index, p_cdf, <span class="dt">lwd =</span> <span class="dv">2</span>, <span class="dt">col =</span> <span class="st">'forestgreen'</span>)
+<span class="kw"><a href="https://www.rdocumentation.org/packages/graphics/topics/legend">legend</a></span>(<span class="st">'bottomright'</span>, 
+       <span class="dt">legend =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'delivery prob F(P)'</span>, <span class="st">'valley width F(D)'</span>, <span class="st">'F(D)/F(P)'</span>),
+       <span class="dt">fill =</span> <span class="kw"><a href="https://www.rdocumentation.org/packages/base/topics/c">c</a></span>(<span class="st">'forestgreen'</span>, <span class="st">'coral3'</span>, <span class="st">'slateblue'</span>))</code></pre></div>
+<p><img src="summer2019_update_files/figure-html/unnamed-chunk-10-2.png" width="700"></p>
 </div>
-</div>
-<div id="next-steps" class="section level2">
-<h2 class="hasAnchor">
-<a href="#next-steps" class="anchor"></a>Next Steps</h2>
-<p>Improve the method for estimating debris flow fraction by partitioning deposit fractions across the transect space.</p>
-<p>Improve the method for estimating debris flow residence time by partitioning residence times across the transect space.</p>
-<p>Model the relation between weighted delivery probabilities and unweighted probabilities, and use as a weighting function to estimate flux from unweighted probabiltiies.</p>
 </div>
   </div>
 
@@ -290,8 +388,8 @@ sample sites in red, linear fit in black, average per node in blue
       <li><a href="#millerburnett-model-output">Miller/Burnett Model Output</a></li>
       <li><a href="#georeferencing-knowles-creek">Georeferencing Knowles Creek</a></li>
       <li><a href="#debris-flow-residence-times">Debris Flow Residence Times</a></li>
-      <li><a href="#estimating-flux">Estimating Flux</a></li>
-      <li><a href="#next-steps">Next Steps</a></li>
+      <li><a href="#examining-delivery-probabilities">Examining Delivery Probabilities</a></li>
+      <li><a href="#weighting-delivery-probabilities">Weighting Delivery Probabilities</a></li>
       </ul>
 </div>
       </div>

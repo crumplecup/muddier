@@ -188,17 +188,25 @@ tranodes <- knodes[knodes$NODE_ID%in%ntout,]
 #subset nodes within transect length
 trans <- knodes[knodes$NODE_ID>=min(tranodes$NODE_ID) & knodes$NODE_ID<=max(tranodes$NODE_ID),]
 
-#record cross-sectional area at each transect
-tranodes$area <- 0
-for (i in 1:nrow(tranodes))  tranodes$area[i] <- kn_vol$total_area_m2[i]
 
-#record contributing area at each transect
-tranodes$contr <- 0
-for (i in 1:nrow(tranodes))  tranodes$contr[i] <- kn_vol$contr_area_km2[i]
+tranodes$area <- 0  # cross-sectional area in meters
+tranodes$contr <- 0  # contributing area
+tranodes$top <- 0  # top valley width in meters
+tranodes$basal <- 0  # basal valley width in meters
 
-#interpolate cross-sectional area between transects
-trans$area <- 0
-trans$contr <- 0
+for (i in 1:nrow(tranodes))  {
+  tranodes$area[i] <- kn_vol$total_area_m2[i]
+  tranodes$contr[i] <- kn_vol$contr_area_km2[i]
+  tranodes$top[i] <- kn_vol$top_width_m[i]
+  tranodes$basal[i] <- kn_vol$basal_width_m[i]
+}
+
+#interpolate between transects
+trans$area <- 0  # cross-sectional area in meters
+trans$contr <- 0  # contributing area
+trans$top <- 0  # top valley width in meters
+trans$basal <- 0  # basal valley width in meters
+
 seg <- 0
 
 for (i in 1:(nrow(tranodes)-1))	{
@@ -206,6 +214,10 @@ for (i in 1:(nrow(tranodes)-1))	{
   trans$area[trans$NODE_ID==tranodes$NODE_ID[i+1]]	<- tranodes$area[tranodes$NODE_ID==tranodes$NODE_ID[i+1]]
   trans$contr[trans$NODE_ID==tranodes$NODE_ID[i]]	<- tranodes$contr[tranodes$NODE_ID==tranodes$NODE_ID[i]]
   trans$contr[trans$NODE_ID==tranodes$NODE_ID[i+1]]	<- tranodes$contr[tranodes$NODE_ID==tranodes$NODE_ID[i+1]]
+  trans$top[trans$NODE_ID==tranodes$NODE_ID[i]]	<- tranodes$top[tranodes$NODE_ID==tranodes$NODE_ID[i]]
+  trans$top[trans$NODE_ID==tranodes$NODE_ID[i+1]]	<- tranodes$top[tranodes$NODE_ID==tranodes$NODE_ID[i+1]]
+  trans$basal[trans$NODE_ID==tranodes$NODE_ID[i]]	<- tranodes$basal[tranodes$NODE_ID==tranodes$NODE_ID[i]]
+  trans$basal[trans$NODE_ID==tranodes$NODE_ID[i+1]]	<- tranodes$basal[tranodes$NODE_ID==tranodes$NODE_ID[i+1]]
 
   seg <- tranodes$NODE_ID[i+1] - tranodes$NODE_ID[i]
   for (j in 1:(seg-1))	{
@@ -220,6 +232,7 @@ for (i in 1:(nrow(tranodes)-1))	{
          trans$area[trans$NODE_ID==tranodes$NODE_ID[i]]) +
       #add starting area
       trans$area[trans$NODE_ID==tranodes$NODE_ID[i]]
+
     trans$contr[trans$NODE_ID==(tranodes$NODE_ID[i]+j)] <- (
       #percent distance to node
       (trans$ToMouth_km[trans$NODE_ID==(tranodes$NODE_ID[i]+j)] -
@@ -231,6 +244,31 @@ for (i in 1:(nrow(tranodes)-1))	{
          trans$contr[trans$NODE_ID==tranodes$NODE_ID[i]]) +
       #add starting area
       trans$contr[trans$NODE_ID==tranodes$NODE_ID[i]]
+
+    trans$top[trans$NODE_ID==(tranodes$NODE_ID[i]+j)] <- (
+      #percent distance to node
+      (trans$ToMouth_km[trans$NODE_ID==(tranodes$NODE_ID[i]+j)] -
+         trans$ToMouth_km[trans$NODE_ID==tranodes$NODE_ID[i]]) /
+        (trans$ToMouth_km[trans$NODE_ID==tranodes$NODE_ID[i+1]] -
+           trans$ToMouth_km[trans$NODE_ID==tranodes$NODE_ID[i]])	) *
+      #multiply by change in val
+      (trans$top[trans$NODE_ID==tranodes$NODE_ID[i+1]] -
+         trans$top[trans$NODE_ID==tranodes$NODE_ID[i]]) +
+      #add starting val
+      trans$top[trans$NODE_ID==tranodes$NODE_ID[i]]
+
+    trans$basal[trans$NODE_ID==(tranodes$NODE_ID[i]+j)] <- (
+      #percent distance to node
+      (trans$ToMouth_km[trans$NODE_ID==(tranodes$NODE_ID[i]+j)] -
+         trans$ToMouth_km[trans$NODE_ID==tranodes$NODE_ID[i]]) /
+        (trans$ToMouth_km[trans$NODE_ID==tranodes$NODE_ID[i+1]] -
+           trans$ToMouth_km[trans$NODE_ID==tranodes$NODE_ID[i]])	) *
+      #multiply by change in val
+      (trans$basal[trans$NODE_ID==tranodes$NODE_ID[i+1]] -
+         trans$basal[trans$NODE_ID==tranodes$NODE_ID[i]]) +
+      #add starting val
+      trans$basal[trans$NODE_ID==tranodes$NODE_ID[i]]
+
   }
 }
 
@@ -329,8 +367,9 @@ trans$dfprob[trans$dfp>0] <- trans$dfp[trans$dfp>0]
 trans$dfprob[trans$dfp==0] <- trans$DebrisFlow[trans$dfp==0]
 
 
-# transects <- trans
-# usethis::use_data(transects, overwrite = T)
+setwd('/home/crumplecup/work/muddier/')
+transects <- trans
+usethis::use_data(transects, overwrite = T)
 
 
 
@@ -406,3 +445,115 @@ abline(lm(df_flux ~ trans$DebrisFlow))
 abline(h = ave_df1, lty = 2, col = 'slateblue')
 legend('topright', legend = c('Sample Sites', 'Linear Fit', 'Average per Node'), fill = c('forestgreen','black','blue'))
 dev.off()
+
+
+# weighting function for delivery probs
+
+# delivery prob index
+p_index <- sort(transects$dfprob)
+
+# cdf of delivery probs
+p_cdf <- to_cdf(p_index/sum(p_index))
+
+# change in delivery prob cdf per change in index
+delta_p <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_p))  {
+  delta_p[i] <- p_cdf[i] - p_cdf[i-1]
+}
+
+# cdf of volume by prob index
+v_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(v_cdf))  {
+  v_cdf[i] <- sum(transects$area[transects$dfprob <= p_index[i]]) /
+    sum(transects$area)
+}
+
+# change in volume cdf per change in index
+delta_v <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_v))  {
+  delta_v[i] <- v_cdf[i] - v_cdf[i-1]
+}
+
+# change in volume cdf per change in del prob cdf
+p_wt <- delta_v / delta_p
+
+# find ks values in S = ks(A^theta)
+lslope <- transects$GRADIENT %>% log  # logged slope
+lcontr <- transects$contr %>% log # logged contr area
+
+as_mod <- lm(lslope ~ lcontr)  # fit AS to power law
+as_theta <- as_mod$coefficients[2]  # pull theta value
+
+# estimate individual ks values using pulled theta
+log_ks <- lslope + as_theta * lcontr
+ks <- exp(log_ks)
+transects$p_ks <- transects$dfprob / ks
+
+# cdf of ks / pdel ratio over pdel
+p_ks_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(p_ks_cdf))  {
+  p_ks_cdf[i] <- sum(transects$p_ks[transects$dfprob <= p_index[i]]) /
+    sum(transects$p_ks)
+}
+
+# change in p_ks cdf per change in index
+delta_p_ks <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_p_ks))  {
+  delta_p_ks[i] <- p_ks_cdf[i] - p_ks_cdf[i-1]
+}
+
+# change in volume cdf per change in del prob cdf
+p_ks_wt <- delta_p_ks / delta_p
+
+p_wt_cdf <- to_cdf(p_wt[-1] / sum(p_wt[-1]))
+p_ks_wt_cdf <- to_cdf(p_ks_wt[-1] / sum(p_ks_wt[-1]))
+
+
+# cdf of top width by prob index
+top_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(top_cdf))  {
+  top_cdf[i] <- sum(transects$top[transects$dfprob <= p_index[i]]) /
+    sum(transects$top)
+}
+
+# change in top width cdf per change in index
+delta_top <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_top))  {
+  delta_top[i] <- top_cdf[i] - top_cdf[i-1]
+}
+
+# change in top width cdf per change in del prob cdf
+top_wt <- delta_top / delta_p
+top_cdf <- to_cdf(top_wt[-1] / sum(top_wt[-1]))
+
+
+# cdf of basal width by prob index
+basal_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(basal_cdf))  {
+  basal_cdf[i] <- sum(transects$basal[transects$dfprob <= p_index[i]]) /
+    sum(transects$basal)
+}
+
+# change in basal width cdf per change in index
+delta_basal <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_basal))  {
+  delta_basal[i] <- basal_cdf[i] - basal_cdf[i-1]
+}
+
+# change in basal width cdf per change in del prob cdf
+basal_wt <- delta_basal / delta_p
+basal_cdf <- to_cdf(basal_wt[-1] / sum(basal_wt[-1]))
+
+
+plot(p_index[-1], p_ks_wt_cdf, type = 'l', lwd = 2, col = 'forestgreen',
+     xlab = 'delivery probability', ylab = 'cdf')
+lines(p_index[-1], p_wt_cdf, lwd = 2, col = 'slateblue')
+lines(p_index[-1], top_cdf, lwd = 1, col = 'coral3')
+lines(p_index[-1], basal_cdf, lwd = 1, col = 'goldenrod')
+legend('bottomright', legend = c('volume', 'p/ks', 'top width', 'basal width'),
+       fill = c('forestgreen', 'slateblue', 'coral3', 'goldenrod'))
+
+
+
+
+
