@@ -16,7 +16,7 @@ convenience plotting function
  @param nod is the river node output of the M/B model
  @param map is the background raster
  @return a plot centered on `pt` at zoom `mag`
+ @export
  @importFrom magrittr %>%
  @seealso circ
- @export
 }

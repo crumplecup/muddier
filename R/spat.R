@@ -1,3 +1,4 @@
+
 #'  birdseye
 #'
 #'  convenience plotting function
@@ -8,9 +9,9 @@
 #'  @param nod is the river node output of the M/B model
 #'  @param map is the background raster
 #'  @return a plot centered on `pt` at zoom `mag`
+#'  @export
 #'  @importFrom magrittr %>%
 #'  @seealso circ
-#'  @export
 
 birdseye <- function(pt,mag=40,flow=flowline,nod=nodes,map=uk)	{
   frame <- map %>% zoom(pt,mag)
@@ -313,9 +314,8 @@ tri_length <- function(pt,bear,dist,north=TRUE)	{
 zoom <- function(x,d,z=2)	{
   m <- 0
 
-  if (class(x)=='RasterLayer' |
-      class(x)=='RasterBrick' |
-      class(x)=='RasterStack')	{
+  if (class(x) != 'Extent' &
+      class(x) != 'numeric')	{
     x <- raster::extent(x)
   }
 

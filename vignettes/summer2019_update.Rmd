@@ -74,6 +74,23 @@ legend('bottomleft', legend = c('knowles creek', 'transects', 'landmarks'),
 
 ```
 
+## Georeferencing Bear Creek
+
+In a similar manner to Knowles Creek, we can conform the transect survey to the node representation by relating hipchain lengths in the survey to outlet distances in the node network at tributary junctions.  The Miller/Burnet node network representation of Bear Creek has 15 tributary junctions, all of which are clearly identifiable in the field notes of the Lancaster transect surveys.  The data object `bear` in the `muddier` package is the node representation of Bear Creek with fitted Lancaster survey values for cross-sectional area, contributing area, and valley width.
+
+```{r}
+
+trib_ids <- c(386219, 386239, 386243, 386258, 386269, 386278, 386299, 386314,
+              386331, 386348, 386359, 386378, 386389, 386409, 386440, 386452)
+bear_tribs <- bear[bear$NODE_ID %in% trib_ids, ]
+
+plot(bear, pch = 20, col = 'slateblue')
+points(bear_tribs, pch = 20, col = 'coral3')
+legend('bottomleft', legend = c('bear creek', 'trib junctions'),
+       fill = c('slateblue', 'coral3'))
+```
+
+
 ## Debris Flow Residence Times
 
 The Lancaster dataset includes 370 radiocarbon-dated charcoal samples from stream bank deposits in Knowles, Bear, Cedar and Golden Ridge creeks.  The sample ages can characterize the residence times of debris flows and fluvial deposits in stream, as the deposit cannot be older than the youngest piece of charcoal in the deposit.  The period of time a piece of charcoal spends before becoming entrained in a stream deposit is the inherited age, and the sample age of the charcoal is the sum of the residence time of the deposit and the inherited age of the charcoal.
@@ -137,34 +154,55 @@ In the same manner as for inherited age, I used the KPC Toolbox in Matlab to fit
 
 During the transect survey, the field researchers selected transect positions that captured inflections in the valley contour.  By recording the depth of sediment across the transect, the researcher can estimate the volume of sediment in a valley area by linear interpolation due to careful selection of transect position to represent the valley contour.
 
-In a similar manner to how Miller & Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model.  However, comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows poor correlation between delivery probabilties and sediment deposition along the channel. Examining the relation between delivery probabilities and slope, contributing area, top valley width, and area-slope product showed similarly poor correlation, with only slope showing mildly positive correlation.
+In a similar manner to how Miller & Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model.  Comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows better correlation between delivery probabilties and sediment deposition for Bear Creek than for Knowles Creek. The correlation is generally stronger for Bear Creek examining the relation between delivery probabilities and slope, contributing area, valley width, and area-slope.
 
 ```{r}
 plot(transects$DebrisFlow, transects$area,
      col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
      ylab='Cross-sectional Area (m2)', xlab='Delivery Probability' )
-abline(lm(transects$area ~ transects$DebrisFlow),col='gray')
+points(bear$DebrisFlow, bear$xsec_area,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+abline(lm(transects$area ~ transects$DebrisFlow),col='coral3')
+abline(lm(bear$xsec_area ~ bear$DebrisFlow),col='purple')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 plot(transects$DebrisFlow, transects$GRADIENT,
      col = rgb(red=0, green=.2, blue=1, alpha=.5), pch=20,
      ylab='Slope', xlab='Delivery Probability' )
-abline(lm(transects$GRADIENT ~ transects$DebrisFlow),col='gray')
+points(bear$DebrisFlow, bear$GRADIENT,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+abline(lm(transects$GRADIENT ~ transects$DebrisFlow),col='blue')
+abline(lm(bear$GRADIENT ~ bear$DebrisFlow),col='purple')
+legend('topright', legend = c('knowles', 'bear'), fill = c('blue', 'purple'))
 
 plot(transects$DebrisFlow, transects$contr,
      col = rgb(red=.5, green=1, blue=.7, alpha=.5), pch=20,
      ylab='Contributing Area (km2)',xlab='Delivery Probability' )
-abline(lm(transects$contr ~ transects$DebrisFlow),col='gray')
+points(bear$DebrisFlow, bear$contr_area/1000000,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+abline(lm(transects$contr ~ transects$DebrisFlow),col='forestgreen')
+abline(lm(bear$contr_area/1000000 ~ bear$DebrisFlow),col='purple')
+legend('topright', legend = c('knowles', 'bear'), fill = c('forestgreen', 'purple'))
 
 area_slope <- transects$GRADIENT * transects$contr
+area_slope_br <- bear$GRADIENT * bear$contr_area/1000000
 plot(transects$DebrisFlow, area_slope,
-     col = rgb(red=.5, green=0, blue=1, alpha=.5), pch=20,
+     col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
      ylab='Contr Area * Slope',xlab='Delivery Probability' )
-abline(lm(area_slope ~ transects$DebrisFlow),col='gray')
+points(bear$DebrisFlow, area_slope_br,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+abline(lm(area_slope ~ transects$DebrisFlow),col='coral3')
+abline(lm(area_slope_br ~ bear$DebrisFlow),col='purple')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 plot(transects$DebrisFlow, transects$top,
-     col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20,
-     ylab='Top Valley Width (m)',xlab='Delivery Probability' )
-abline(lm(transects$top ~ transects$DebrisFlow),col='gray')
+     col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
+     ylab='Valley Width (m)',xlab='Delivery Probability' )
+points(bear$DebrisFlow, bear$valley_width,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+abline(lm(transects$top ~ transects$DebrisFlow),col='coral3')
+abline(lm(bear$valley_width ~ bear$DebrisFlow),col='purple')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 ```
 
