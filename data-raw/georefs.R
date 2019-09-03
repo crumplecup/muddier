@@ -25,15 +25,6 @@ contr_delta <- function(vec) {
   delta
 }
 
-birdseye <- function(pt, mag=40, nod=nodes)	{
-  frame <- nod %>% zoom(pt,nod)
-  crop <- nod %>% crop(frame)
-  plot(crop)
-  points(nod,pch=20,col='slateblue')
-  lines(pt %>% circ)
-  points(c(pt, pt) %>% matrix(ncol = 2) %>% t,
-         pch=19, col='red')
-}
 
 
 # identify trib junctions by change in contr area

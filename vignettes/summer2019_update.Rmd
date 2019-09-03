@@ -19,7 +19,7 @@ knitr::opts_chunk$set(
 
 ## Summer Update
 
-First I describe the output for the Miller/Burnett model, and how I make use of it in this research.  Second, I describe the process of geolocating Knowles Creek and matching Lancaster transect survey data to analogous positions in the M/B output, and how we use Lancaster sediment deposit data to weight delivery probabilities from the M/B model.  The third section decribes estimating the residence times of deposits by correcting for inherited charcoal age.  The fourth section describes our initial attempts at estimating debris flow deposit flux rates.
+This research makes use of delivery probabilities estimated by the Miller/Burnett (MB) model, which I describe in the first section.  Second, I detail the process of georeferencing creeeks by matching Lancaster transect survey data to analogous positions in the MB linked node network representation of the channel.  Currently I have georeferenced Bear Creek and Knolwes Creek, while georeferences for Cedar, Hoffman and Golden Ridge Creeks should be forthcoming in the next few weeks.  For radiocarbon sample data, I describe the process of estimating deposit age by subtracting the inherited age distribution from the sample age via convolution.  Then we examine delivery probabilities in relation to cross-sectional area and valley width, and consider a number of weighting functions to calibrate MB probabilities using empiric deposition data from the Lancaster surveys.
 
 ## Miller/Burnett Model Output
 
@@ -45,7 +45,7 @@ plot(knowles[250:265,], pch = 20, col = 'slateblue', xlab = 'zoomed in on nodes'
 
 ## Georeferencing Knowles Creek
 
-When field researchers record a GPS position of a tributary junction in the Lancaster survey data, the corresponding node on the linked-node network may diverge significantly in location.  First, the model coerces channel position to corner points along a raster matching the input DEM in resolution.  Second, the model applies a smoothing algorithm to avoid jagged or sawtoothed interpretations of smooth channnels traveling at angles to the raster pixel edges.  The additive results of both processes can result in significant spatial divergence in position from the actual location of a given landmark.
+When field researchers record a GPS position of a tributary junction in the Lancaster survey data, the corresponding node on the linked-node network may diverge significantly in location.  First, the model conforms channel position to corner points along a raster matching the input DEM in resolution.  Second, the model applies a smoothing algorithm to avoid jagged or sawtoothed interpretations of smooth channnels traveling at acute angles to the raster pixel edges.  The additive results of both processes can result in significant spatial divergence in position from the GPS position of a given landmark.
 
 The distance between landmarks along the linked-node network can vary from the hipchain distances recorded in the Lancaster survey data due to the same two processes, namely coercion to a 10m raster and channel smoothing.  Hipchain distances relative to node network distances may either be stretched or shrunken.  
 
@@ -53,7 +53,9 @@ During a 2006 survey, Lancaster recorded the GPS coordinates of a number of trib
 
 Transect survey field notes also referenced three tributary junctions further upstream, naming two of the tributaries as Heron and Boomer creeks, and noted the third to be intersecting the right bank of Knowles at hipchain 1448.  The tributary junctions were identifiable by valley topography evident in LiDAR imagery of the area, and had clear analogues in the linked-node network.  Lancaster also recorded GPS positions at hipchains 793 and 2907 in 2006.
 
-The node shapefile from the Miller/Burnett output includes a variable called `ToMouth_km` which represents the distance to the channel outlet in kilometers for a given channel node.  The difference in `ToMouth_km` values between nodes, whether it is greater or smaller than the hipchain distance recorded in the field survey between the same landmarks, determines the degree to which the hipchain distances have expanded or shrunken by coercion to the linked-node network.  To estimate the position of a transect on the node network given the hipchain distance from the Lancaster survey, I first multiply the hipchain length of the transect distance by the ratio between the outlet and hipchain length, resulting in an estimated outlet distance for the transect.  Then I find the nearest node to the estimated transect position and assign the transect to the node.
+The node shapefile from the Miller/Burnett output includes a variable called `ToMouth_km` which represents the distance to the channel outlet in kilometers for a given channel node.  The difference in `ToMouth_km` values between nodes, whether it is greater or smaller than the hipchain distance recorded in the field survey between the same landmarks, determines the degree to which the hipchain distances have expanded or shrunken by coercion to the linked-node network.  
+
+If the hipchain distance between landmarks from the transect survey is $L_{hip}$, and the outlet distance between landmarks in the MB model is $L_{out}$, then the outlet to hipchain ratio is $\frac{L_{out}}{L_{hip}}$ so that multiplying a hipchain distance by the ratio produces a corresponding outlet distance.  For each transect, I convert the hipchain distance to an outlet distance, then find the nearest corresponding node on the MB channel representation, and assign the transect to that node.  For nodes in between transects, I can infer cross-sectional area and valley width by linear interpolation because the field researchers selected transect points that captured inflections in the valley contour.
 
 The `muddier` package includes the resulting data object called `landmarks`.  The `x` and `y` variables record the spatial position of the landmark node, `hip` records the hipchain distance upstream of the tributary junction for K-38, corrected for elevation, `nodeid` records the id of the corresponding node in the linked-node network for the landmark, `kmtout` is renamed from `ToMouth_km` and stands for 'kilometers to outlet', and `outhip` is the ratio of the difference in outlet distance and hipchain distance between the current and preceding node in the table. For the most upstream portion of the transect survey, lacking a landmark upstream of the survey site, I make the compromise of assuming the outlet to hipchain ratio is identical to the ratio for the nearest known segment of the survey area.  Generally, hipchain distances are longer than outlet distances, both because the field researcher may cross banks in the process of securing the hipchain, elongating the distance traveled by taking a more sinuous travel path, and because the node-network representation is algorithmically smoothed, which shortens the path distance by reducing jaggedness in the path.
 
@@ -95,7 +97,7 @@ legend('bottomleft', legend = c('bear creek', 'trib junctions'),
 
 The Lancaster dataset includes 370 radiocarbon-dated charcoal samples from stream bank deposits in Knowles, Bear, Cedar and Golden Ridge creeks.  The sample ages can characterize the residence times of debris flows and fluvial deposits in stream, as the deposit cannot be older than the youngest piece of charcoal in the deposit.  The period of time a piece of charcoal spends before becoming entrained in a stream deposit is the inherited age, and the sample age of the charcoal is the sum of the residence time of the deposit and the inherited age of the charcoal.
 
-The field researchers collected multiple samples at deposit sites for debris flows, fluvial fines and fluvial gravels to assess the distribution of inherited ages in entrained charcoal.  The sample ages come back from the lab as age distribution curves discretized to 5-year intervals, showing the probability that the sample age falls within a given 5-year range, comprising a PMF.  At each site with multiple samples, I subtracted the PMF of the youngest sample from the PMF of each sample at that site via convolution, including the youngest sample itself.  Then I summed together the convolved PMFs by facies and renormalized to produce an inherited age distribution for each facies.  I characterized the uncertainty around each inherited age distribution by bootstrapping.
+The field researchers collected multiple samples at deposit sites for debris flows, fluvial fines and fluvial gravels to assess the distribution of inherited ages in entrained charcoal.  The sample ages come back from the lab as age distribution curves discretized to 5-year intervals, where values show the probability that the sample age falls within a given 5-year range, comprising a PMF.  At each site with multiple samples, I subtracted the PMF of the youngest sample from the PMF of each sample at that site via convolution, including the youngest sample itself.  Then I summed together the convolved PMFs by facies and renormalized to produce an inherited age distribution for each facies.  I characterized the uncertainty around each inherited age distribution by bootstrapping.
 
 The `muddier` vignette describes the functions and data objects used to estimate inherited age distributions and residence times, which is available at https://crumplecup.github.io/muddier/articles/muddier.html.
 
@@ -114,9 +116,9 @@ legend('bottomright', legend = c('empiric', '95% CIs', 'phase-type fit'),
 ```
 
 
-I used the KPC Toolbox in Matlab to fit the empirical distribution of inherited age to a number of continuous distributions, namely the exponential, gamma, Weibull and phase-type distributions.  We used the Kuiper statistic and Kolomogorov-Smirnov test to reject the exponential, gamma and Weibull distributions.  Prony's method provided the distrubtion with the best goodness of fit statistic for debris flows, while the Weibull distribution provided the best fit for fluvial fines and fluvial gravels.
+I used the KPC Toolbox in Matlab to fit the empirical distribution of inherited age to a number of continuous distributions, namely the exponential, gamma, Weibull and phase-type distributions.  We used the Kuiper statistic and Kolomogorov-Smirnov test to compare the goodness of fit.  Prony's method provided the distrubtion with the best goodness of fit statistic for debris flows, while the Weibull distribution provided the best fit for fluvial fines and fluvial gravels.
 
-Using the fit distributions for inherited age for each facies, I then estimate the residence time of deposits with only one sample by subtracting the inherited age distribution from the sample age PMF using convolution.  In the `charcoal` dataset, where samples are arranged from youngest to oldest mean estimed sample age, we can compare the difference between esimated mean sample age and estimated mean residence time to illustrate the general size of the inherited age correction.
+Using the fit distributions for inherited age for each facies, I then estimate the residence time of deposits with only one site sample by subtracting the inherited age distribution from the sample age PMF using convolution.  In the `charcoal` dataset, where samples are arranged from youngest to oldest mean estimed sample age, we can compare the difference between esimated mean sample age and estimated mean residence time to illustrate the general size of the inherited age correction.
 
 ```{r}
 # expected mean residence time of corrected pmfs
@@ -154,9 +156,66 @@ In the same manner as for inherited age, I used the KPC Toolbox in Matlab to fit
 
 During the transect survey, the field researchers selected transect positions that captured inflections in the valley contour.  By recording the depth of sediment across the transect, the researcher can estimate the volume of sediment in a valley area by linear interpolation due to careful selection of transect position to represent the valley contour.
 
-In a similar manner to how Miller & Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model.  Comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows better correlation between delivery probabilties and sediment deposition for Bear Creek than for Knowles Creek. The correlation is generally stronger for Bear Creek examining the relation between delivery probabilities and slope, contributing area, valley width, and area-slope.
+In a similar manner to how Miller & Burnett used landslide runout track surveys to calibrate a topological index to an empiric record of debris flows, we can use the transect record of valley sediment deposition to calibrate predicted delivery probabilities in the Miller/Burnett model.
 
-```{r}
+### Weighting by Area-Slope Relation
+
+We can fit the area-slope relation to a power law where slope $S$ relates to contributing area $A$ by the function:
+
+$$ S = k_sA^{-\theta}  $$
+
+We can relate logged slope to logged contributing area using a linear model, so that:
+
+$$  log(S) = log(k_sA^{-\theta})  $$
+$$  log(S) = log(k_s) - \theta log(A)  $$
+
+where $\theta$ is the slope of a linear model with intercept $log(k_s)$.  Using the estimated $\theta$ for all surveyed creeks, we can back-calculate an individual $k_s$ for each channel node holding $\theta$ constant.
+
+
+```{r, fig.show='hold'}
+
+
+# find ks values in S = ks(A^theta)
+lslope_kn <- transects$GRADIENT %>% log  # logged slope
+lcontr_kn <- transects$contr %>% log # logged contr area
+lslope_br <- bear$GRADIENT %>% log  # logged slope
+lcontr_br <- (bear$contr_area/1000000) %>% log # logged contr area
+
+lslope <- c(lslope_kn, lslope_br)
+lcontr <- c(lcontr_kn, lcontr_br)
+as_mod <- lm(lslope ~ lcontr)  # fit AS to power law
+as_theta <- as_mod$coefficients[2]  # pull theta value
+sum_mod <- summary(as_mod)
+
+plot(lcontr_kn, lslope_kn, pch = 20, col = rgb(red=1, green=0, blue=.2, alpha=.5),
+     xlab = 'log(contributing area)', ylab = 'log(slope)')
+points(lcontr_br, lslope_br, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.5))
+abline(as_mod, lwd = 2, col = 'goldenrod')
+text(1,-2, paste0('R2 = ', round(sum_mod$adj.r.squared, 3)))
+
+# estimate individual ks values using pulled theta
+log_ks_kn <- lslope_kn - as_theta * lcontr_kn
+ks_kn <- exp(log_ks_kn)
+transects$p_ks <- transects$dfprob / ks_kn
+
+log_ks_br <- lslope_br - as_theta * lcontr_br
+ks_br <- exp(log_ks_br)
+bear$p_ks <- bear$DebrisFlow / ks_br
+
+
+plot(transects$contr, transects$DebrisFlow,
+     col = rgb(red=.5, green=1, blue=.7, alpha=.5), pch=20,
+     xlab='Contributing Area (km2)', ylab='Delivery Probability')
+points(bear$contr_area/1000000, bear$DebrisFlow,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+legend('topright', legend = c('knowles', 'bear'), fill = c('forestgreen', 'purple'))
+
+
+```
+
+Comparison of cross-sectional area at transects to Miller/Burnett delivery probabilities shows better correlation for Bear Creek than for Knowles Creek. The correlation is also stronger for Bear Creek examining the relation between delivery probabilities and valley width.  In addition to examining delivery probabilities $P$, we also examine the ratio of $P/k_s$ in relation to the same channel characteristics.
+
+```{r, fig.show='hold'}
 plot(transects$DebrisFlow, transects$area,
      col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
      ylab='Cross-sectional Area (m2)', xlab='Delivery Probability' )
@@ -166,34 +225,16 @@ abline(lm(transects$area ~ transects$DebrisFlow),col='coral3')
 abline(lm(bear$xsec_area ~ bear$DebrisFlow),col='purple')
 legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
-plot(transects$DebrisFlow, transects$GRADIENT,
-     col = rgb(red=0, green=.2, blue=1, alpha=.5), pch=20,
-     ylab='Slope', xlab='Delivery Probability' )
-points(bear$DebrisFlow, bear$GRADIENT,
-       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
-abline(lm(transects$GRADIENT ~ transects$DebrisFlow),col='blue')
-abline(lm(bear$GRADIENT ~ bear$DebrisFlow),col='purple')
-legend('topright', legend = c('knowles', 'bear'), fill = c('blue', 'purple'))
-
-plot(transects$DebrisFlow, transects$contr,
-     col = rgb(red=.5, green=1, blue=.7, alpha=.5), pch=20,
-     ylab='Contributing Area (km2)',xlab='Delivery Probability' )
-points(bear$DebrisFlow, bear$contr_area/1000000,
-       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
-abline(lm(transects$contr ~ transects$DebrisFlow),col='forestgreen')
-abline(lm(bear$contr_area/1000000 ~ bear$DebrisFlow),col='purple')
-legend('topright', legend = c('knowles', 'bear'), fill = c('forestgreen', 'purple'))
-
-area_slope <- transects$GRADIENT * transects$contr
-area_slope_br <- bear$GRADIENT * bear$contr_area/1000000
-plot(transects$DebrisFlow, area_slope,
+plot(transects$p_ks, transects$area,
      col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
-     ylab='Contr Area * Slope',xlab='Delivery Probability' )
-points(bear$DebrisFlow, area_slope_br,
+     ylab='Cross-sectional Area (m2)', xlab='P/ks' )
+points(bear$p_ks, bear$xsec_area,
        col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
-abline(lm(area_slope ~ transects$DebrisFlow),col='coral3')
-abline(lm(area_slope_br ~ bear$DebrisFlow),col='purple')
+abline(lm(transects$area ~ transects$p_ks),col='coral3')
+abline(lm(bear$xsec_area ~ bear$p_ks),col='purple')
 legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
+
+
 
 plot(transects$DebrisFlow, transects$top,
      col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
@@ -202,6 +243,15 @@ points(bear$DebrisFlow, bear$valley_width,
        col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
 abline(lm(transects$top ~ transects$DebrisFlow),col='coral3')
 abline(lm(bear$valley_width ~ bear$DebrisFlow),col='purple')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
+
+plot(transects$p_ks, transects$top,
+     col = rgb(red=1, green=0, blue=.2, alpha=.5), pch=20,
+     ylab='Valley Width (m)',xlab='P/ks' )
+points(bear$p_ks, bear$valley_width,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.5), pch=20)
+abline(lm(transects$top ~ transects$p_ks),col='coral3')
+abline(lm(bear$valley_width ~ bear$p_ks),col='purple')
 legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 ```
@@ -217,10 +267,18 @@ $$ wt_V (P_i, P_{i+1}) = \frac{F_V (P_{i+1}) - F_V (P_i)}{F_P (P_{i+1}) - F_P (P
 
 ```{r}
 
+kn_sub <- transects[,c(2:4,7:10,14)]  # knowles subset
+kn_sub$name <- 'knowles'
+br_sub <- bear[,c(2:4,7:11)]  # bear subset
+br_sub$name <- 'bear'
+names(kn_sub) <- names(br_sub)
+creeks <- rbind(kn_sub, br_sub)
+
+
 # weighting function for delivery probs
 
 # delivery prob index
-p_index <- sort(transects$dfprob)
+p_index <- sort(creeks$DebrisFlow)
 
 # cdf of delivery probs
 p_cdf <- to_cdf(p_index/sum(p_index))
@@ -234,8 +292,8 @@ for (i in 2:length(delta_p))  {
 # cdf of volume by prob index
 v_cdf <- vector(length(p_index), mode = 'numeric')
 for (i in 2:length(v_cdf))  {
-  v_cdf[i] <- sum(transects$area[transects$dfprob <= p_index[i]]) /
-    sum(transects$area)
+  v_cdf[i] <- sum(creeks$xsec_area[creeks$DebrisFlow <= p_index[i]]) /
+    sum(creeks$xsec_area)
 }
 
 # change in volume cdf per change in index
@@ -246,133 +304,139 @@ for (i in 2:length(delta_v))  {
 
 # change in volume cdf per change in del prob cdf
 p_wt <- delta_v / delta_p
-p_wt_cdf <- to_cdf(p_wt[-1] / sum(p_wt[-1]))
-
-plot(p_index, p_wt, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.5),
-     xlab = 'delivery probability', ylab = 'F(V)/F(P)')
-abline(lm(p_wt ~ p_index), col = 'gray')
-
-plot(p_index[-1], p_wt_cdf, type = 'l', lwd = 2, col = 'slateblue',
-     xlab = 'delivery probability', ylab = 'cdf')
-lines(p_index, v_cdf, lwd = 2, col = 'coral3')
-lines(p_index, p_cdf, lwd = 2, col = 'forestgreen')
-legend('bottomright', 
-       legend = c('delivery prob F(P)', 'volume F(V)', 'F(V)/F(P)'),
-       fill = c('forestgreen', 'coral3', 'slateblue'))
-
-```
-
-### Weighting by Area-Slope Relation
-
-We can fit the area-slope relation to a power law where slope $S$ relates to contributing area $A$ by the function:
-
-$$ S = k_sA^{-\theta}  $$
-
-We can relate logged slope to logged contributing area using a linear model, so that:
-
-$$  log(S) = log(k_sA^{-\theta})  $$
-$$  log(S) = log(k_s) - \theta log(A)  $$
-We can estimate $\theta$ as the slope of a linear model with intercept $log(k_s)$.  Based upon the estimated $\theta$ we can then calculate an individual $k_s$ for each channel node.
 
 
-```{r}
-
-
-# find ks values in S = ks(A^theta)
-lslope <- transects$GRADIENT %>% log  # logged slope
-lcontr <- transects$contr %>% log # logged contr area
-
-as_mod <- lm(lslope ~ lcontr)  # fit AS to power law
-as_theta <- as_mod$coefficients[2]  # pull theta value
-
-plot(lcontr, lslope, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.5),
-     xlab = 'log(contributing area)', ylab = 'log(slope)')
-abline(as_mod, lwd = 2, col = 'goldenrod')
-text(1,-2, 'R2 = 0.78')
-
-# estimate individual ks values using pulled theta
-log_ks <- lslope - as_theta * lcontr
-ks <- exp(log_ks)
-transects$p_ks <- transects$dfprob / ks
-
-plot(p_index, ks, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.5),
-     xlab = 'delivery probability')
+plot(creeks$p_ks, p_wt, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.01),
+     xlab = 'delivery probability', ylab = 'wt_V')
+points(creeks$p_ks[creeks$name == 'knowles'], 
+       p_wt[creeks$name == 'knowles'], pch = 20,
+       col = rgb(red=1, green=0, blue=.2, alpha=.1))
+points(creeks$p_ks[creeks$name == 'bear'], 
+       p_wt[creeks$name == 'bear'], pch = 20,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.1))
+abline(lm(p_wt ~ creeks$p_ks), col = 'gray')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 ```
 
-Using the ratio of $P/k_s$, let $F_{P/k_s}(P_0)$ be the CDF of $P/k_s$ with respect to $P$.  We can then compare change in the CDF of $P/k_s$ to change in the CDF of $P$.  The $P/k_s$ weighting function $wt_{P/k_s}$ over an interval $P_i$ to $P_{i + 1}$ along $P$ is:
 
-$$ wt_{P/k_s} (P_i, P_{i+1}) = \frac{F_{P/k_s} (P_{i+1}) - F_{P/k_s} (P_i)}{F_P (P_{i+1}) - F_P (P_i)} $$
+Using $K$ for the ratio of $P/k_s$, let $F_V(K_0)$ be the CDF of $V$ with respect to $P/k_s$.  We can then compare change in the CDF of $V$ to change in the CDF of $K$.  The volume weighting function $wt_{V_K}$ over an interval $K_i$ to $K_{i + 1}$ along $K$ is:
 
-```{r}
+$$ wt_{V_K} (K_i, K_{i+1}) = \frac{F_V (K_{i+1}) - F_V (K_i)}{F_K (K_{i+1}) - F_K (K_i)} $$
 
-plot(p_index, transects$p_ks, pch = 20, 
-     col = rgb(red=.5, green=0, blue=.7, alpha=.5),
-     xlab = 'delivery probability', ylab = 'P/ks')
-abline(lm(transects$p_ks ~ p_index), col = 'gray')
+```{r, fig.show='hold'}
 
-# cdf of ks / pdel ratio over pdel
-p_ks_cdf <- vector(length(p_index), mode = 'numeric')
-for (i in 2:length(p_ks_cdf))  {
-  p_ks_cdf[i] <- sum(transects$p_ks[transects$dfprob <= p_index[i]]) /
-    sum(transects$p_ks)
+# P/ks index
+k_index <- sort(creeks$p_ks)
+
+# cdf of F_K
+k_cdf <- vector(length(k_index), mode = 'numeric')
+for (i in seq_along(k_cdf))  {
+  k_cdf[i] <- sum(creeks$p_ks[creeks$p_ks <= k_index[i]]) /
+    sum(creeks$p_ks)
 }
 
-# change in p_ks cdf per change in index
-delta_p_ks <- vector(length(p_index), mode = 'numeric')
-for (i in 2:length(delta_p_ks))  {
-  delta_p_ks[i] <- p_ks_cdf[i] - p_ks_cdf[i-1]
+# change in p_ks cdf per change in index (F_K(P_0))
+delta_k <- vector(length(k_index), mode = 'numeric')
+for (i in 2:length(delta_k))  {
+  delta_k[i] <- k_cdf[i] - k_cdf[i-1]
 }
+
+# cdf of F_V(K)
+vk_cdf <- vector(length(k_index), mode = 'numeric')
+for (i in seq_along(k_cdf))  {
+  vk_cdf[i] <- sum(creeks$xsec_area[creeks$p_ks <= k_index[i]]) /
+    sum(creeks$xsec_area)
+}
+
+# change in F_V(K_0)
+delta_vk <- vector(length(k_index), mode = 'numeric')
+for (i in 2:length(delta_vk))  {
+  delta_vk[i] <- vk_cdf[i] - vk_cdf[i-1]
+}
+
 
 # change in volume cdf per change in del prob cdf
-p_ks_wt <- delta_p_ks / delta_p
-p_ks_wt_cdf <- to_cdf(p_ks_wt[-1] / sum(p_ks_wt[-1]))
+vk_wt <- delta_vk / delta_k
+
+plot(creeks$p_ks, vk_wt, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.01),
+     xlab = 'P/Ks', ylab = 'wt_Vk')
+points(creeks$p_ks[creeks$name == 'knowles'], 
+       vk_wt[creeks$name == 'knowles'], pch = 20,
+       col = rgb(red=1, green=0, blue=.2, alpha=.1))
+points(creeks$p_ks[creeks$name == 'bear'], 
+       vk_wt[creeks$name == 'bear'], pch = 20,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.1))
+abline(lm(vk_wt ~ creeks$p_ks), col = 'gray')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 
-plot(p_index[-1], p_ks_wt_cdf, type = 'l', lwd = 2, col = 'slateblue',
-     xlab = 'delivery probability', ylab = 'cdf')
-lines(p_index, p_ks_cdf, lwd = 2, col = 'coral3')
-lines(p_index, p_cdf, lwd = 2, col = 'forestgreen')
-legend('bottomright', 
-       legend = c('delivery prob F(P)', 'F(P/ks)', 'F(P/ks)/F(P)'),
-       fill = c('forestgreen', 'coral3', 'slateblue'))
 ```
 
 We can follow the same procedure using top valley width, with distance $D$ representing valley width, let $F_D (P_0)$ be the CDF of $D$ with respect to $P$.  The valley width weighting function $wt_D$ over an interval $P_i$ to $P_{i + 1}$ along $P$ is:
 
 $$ wt_D (P_i, P_{i+1}) = \frac{F_D (P_{i+1}) - F_D (P_i)}{F_P (P_{i+1}) - F_P (P_i)} $$
 
-```{r}
+Using $K$ for the ratio of $P/k_s$, let $F_D(K_0)$ be the CDF of $D$ with respect to $P/k_s$.  The $D_K$ weighting function $wt_{D_K}$ over an interval $K_i$ to $K_{i + 1}$ along $K$ is:
+
+$$ wt_{D_K} (K_i, K_{i+1}) = \frac{F_D (K_{i+1}) - F_D (K_i)}{F_K (K_{i+1}) - F_K (K_i)} $$
+
+```{r, fig.show='hold'}
 
 # cdf of top width by prob index
-top_cdf <- vector(length(p_index), mode = 'numeric')
-for (i in 2:length(top_cdf))  {
-  top_cdf[i] <- sum(transects$top[transects$dfprob <= p_index[i]]) /
-    sum(transects$top)
+top_p_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in seq_along(top_p_cdf))  {
+  top_p_cdf[i] <- sum(creeks$valley_width[creeks$DebrisFlow <= p_index[i]]) /
+    sum(creeks$valley_width)
 }
 
 # change in top width cdf per change in index
-delta_top <- vector(length(p_index), mode = 'numeric')
-for (i in 2:length(delta_top))  {
-  delta_top[i] <- top_cdf[i] - top_cdf[i-1]
+delta_p_top <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_p_top))  {
+  delta_p_top[i] <- top_p_cdf[i] - top_p_cdf[i-1]
 }
 
 # change in top width cdf per change in del prob cdf
-top_wt <- delta_top / delta_p
-top_wt_cdf <- to_cdf(top_wt[-1] / sum(top_wt[-1]))
+top_p_wt <- delta_p_top / delta_p
 
-plot(p_index, top_wt, pch = 20, 
-     col = rgb(red=.5, green=0, blue=.7, alpha=.5),
-     xlab = 'delivery probability', ylab = 'F(D)/F(P)')
-abline(lm(top_wt ~ p_index), col = 'gray')
+# same process for k index
+top_k_cdf <- vector(length(k_index), mode = 'numeric')
+for (i in seq_along(top_k_cdf))  {
+  top_k_cdf[i] <- sum(creeks$valley_width[creeks$p_ks <= k_index[i]]) /
+    sum(creeks$valley_width)
+}
 
-plot(p_index[-1], top_wt_cdf, type = 'l', lwd = 2, col = 'slateblue',
-     xlab = 'delivery probability', ylab = 'cdf')
-lines(p_index, top_cdf, lwd = 2, col = 'coral3')
-lines(p_index, p_cdf, lwd = 2, col = 'forestgreen')
-legend('bottomright', 
-       legend = c('delivery prob F(P)', 'valley width F(D)', 'F(D)/F(P)'),
-       fill = c('forestgreen', 'coral3', 'slateblue'))
+delta_k_top <- vector(length(k_index), mode = 'numeric')
+for (i in 2:length(delta_k_top))  {
+  delta_k_top[i] <- top_k_cdf[i] - top_k_cdf[i-1]
+}
+
+top_k_wt <- delta_k_top / delta_k
+
+plot(creeks$DebrisFlow, top_p_wt, pch = 20, 
+     col = rgb(red=.5, green=0, blue=.7, alpha=.01),
+     xlab = 'Delivery Probability', ylab = 'wt_D')
+points(creeks$DebrisFlow[creeks$name == 'knowles'], 
+       top_p_wt[creeks$name == 'knowles'], pch = 20,
+       col = rgb(red=1, green=0, blue=.2, alpha=.1))
+points(creeks$DebrisFlow[creeks$name == 'bear'], 
+       top_p_wt[creeks$name == 'bear'], pch = 20,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.1))
+abline(lm(top_p_wt ~ creeks$DebrisFlow), col = 'gray')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
+
+plot(creeks$p_ks, top_k_wt, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.01),
+     xlab = 'P/Ks', ylab = 'wt_Dk')
+points(creeks$p_ks[creeks$name == 'knowles'], 
+       top_k_wt[creeks$name == 'knowles'], pch = 20,
+       col = rgb(red=1, green=0, blue=.2, alpha=.1))
+points(creeks$p_ks[creeks$name == 'bear'], 
+       top_k_wt[creeks$name == 'bear'], pch = 20,
+       col = rgb(red=.5, green=0, blue=.7, alpha=.1))
+abline(lm(top_k_wt ~ creeks$p_ks), col = 'gray')
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
+
+
 ```
 
 
