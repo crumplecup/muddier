@@ -16,21 +16,19 @@ cd_vol <- fread('cedar.csv')
 # Miller/Burnett model output
 nodes <- readOGR('nodes_debrisflow.shp')
 
-contr_delta <- function(vec) {
-  len <- length(vec)
-  delta <- vector(len, mode = 'numeric')
-  for (i in 2:len) {
-    delta[i] <- vec[i-1] - vec[i]
-  }
-  delta
-}
-
-
-
 # identify trib junctions by change in contr area
 delta_contr_kn <- contr_delta(kn_vol$contr_area_km2)
 delta_contr_br <- contr_delta(br_vol$corr_contr_area_m2)
 delta_contr_cd <- contr_delta(cd_vol$corr_contr_area_m2)
+
+#geotagged location of site
+bear_spot <- c(439290,4869773)	#
+grc_spot <- c(429747,4840441)
+ccc_spot <- c(426574,4868903)	#
+ccf_spot <- c(426555,4868905)
+lk_spot <- c(440403,4865453)	#
+grc_spot <- c(432159,4838575)
+lk2_spot <- c(441479,4868850)	#lk
 
 bear_ref <- snap(bear_spot, nodes@coords)
 ccc_ref <- snap(ccc_spot, nodes@coords)
@@ -61,23 +59,6 @@ plot(delta_contr_kn)
 plot(delta_contr_br[delta_contr_br > 40000])
 
 
-plot_pt <- function(pt, mag = 1, so = nodes)  {
-  ext <- extent(so)
-  scale_x <- (ext[2] - ext[1]) / (2 * mag)
-  scale_y <- (ext[4] - ext[3]) / (2 * mag)
-
-  box <- 0
-  box[1] <- pt[1] - scale_x
-  box[2] <- pt[1] + scale_x
-  box[3] <- pt[2] - scale_y
-  box[4] <- pt[2] + scale_y
-
-  pic <- raster::crop(so, box)
-  plot(pic, pch = 20, col = 'slateblue')
-  lines(circ(pt, rad = scale_x * 0.15))
-  points(c(pt,pt) %>% matrix(ncol = 2) %>% t,
-         pch = 19, col = 'coral3')
-}
 
 spot <- nodes@coords[nodes$NODE_ID == 386219]  # bear outlet to knowles
 spot <- nodes@coords[nodes$NODE_ID == 386239]  # trib B1L lanc 224
@@ -118,39 +99,8 @@ for (i in 2:nrow(bear_tribs))	{
 
 #based upon the 'outlet to hipchain' ratio
 #estimate the distance from nearest landmark point for each transect
-
-hip_to_out <- function(hipchain, trib_hip, trib_out, out_hip)  {
-
-  out <- 0
-  up <- 0
-  down <- 0
-  flag <- 0
-
-  j <- 2
-  for (i in 1:length(hipchain))	{
-
-  while(hipchain[i] > trib_hip[j] & j < length(trib_hip)) j <- j + 1
-  up <- trib_out[j] - ((trib_hip[j] - hipchain[i]) * out_hip[j])
-  down <- trib_out[j-1] + ((hipchain[i] - trib_hip[j-1]) * out_hip[j])
-  flag <- 0
-  if((trib_out[j] - up) < (down - trib_out[j-1])) flag <- 1
-  if(flag) out[i] <- up
-  if(!flag) out[i] <- down
-
-  }
-  out
-}
-
 #snap transects to nearest node
 
-snap_to_node <- function(dist, outlet, ids)  {
-  id <- 0
-  for (i in 1:length(dist))	{
-    difs <- outlet - dist[i]
-    id[i] <- ids[which.min(abs(difs))]
-  }
-  id
-}
 
 bear_out <- hip_to_out(br_vol$outlet_dist_m, bear_tribs$lanc_hip,
                        bear_tribs$ToMouth_km * 1000, bear_tribs$out_hip)
@@ -159,37 +109,6 @@ bear_ids <- snap_to_node(bear_out, bear_nodes$ToMouth_km * 1000, bear_nodes$NODE
 bear_ids[20] <- bear_ids[20] + 1
 
 bear_trib_out <- nodes$ToMouth_km[nodes$NODE_ID %in% bear_ids]
-
-
-
-interp_by_node <-
-  function(vals, trib_out, trib_id, chan_out, chan_id)  {
-    res <- vector(length(chan_id), mode = 'numeric')
-    j <- 1
-
-    for (i in seq_along(res))  {
-      if (chan_id[i] == trib_id[j])  {
-        res[i] <- vals[j]
-      }
-
-      if (chan_id[i] > trib_id[j] &
-          chan_id[i] < trib_id[j + 1])  {
-        trib_len <- trib_out[j + 1] - trib_out[j]
-        chan_len <- chan_out[i] - trib_out[j]
-        pct_len <- chan_len / trib_len
-        val_dif <- vals[j + 1] - vals[j]
-        res[i] <- vals[j] + (val_dif * pct_len)
-      }
-
-      if (chan_id[i] == trib_id[j + 1])  {
-        res[i] <- vals[j + 1]
-        if ((j + 1) < length(trib_id))
-          j <- j + 1
-      }
-    }
-    res
-  }
-
 
 
 bear_xsec_raw <- unlist(br_vol[,10])
@@ -226,6 +145,23 @@ setwd('/home/crumplecup/work/muddier')
 usethis::use_data(bear, overwrite = T)
 
 
+
+# cedar creek
+
+nodes@coords[nodes$NODE_ID == 419876] %>% plot_pt(300)  # cedar mouth
+nodes@coords[nodes$NODE_ID == 419886] %>% plot_pt(100)  # RB trib
+nodes@coords[nodes$NODE_ID == 419901] %>% plot_pt(300)  # RB trib
+nodes@coords[nodes$NODE_ID == 419909] %>% plot_pt(300)  # cedar init
+nodes@coords[nodes$NODE_ID == 418407] %>% plot_pt(300)  # cedar outlet
+
+
+# golden ridge creek
+nodes@coords[nodes$NODE_ID == 122521] %>% plot_pt(200)  # grc mouth
+nodes@coords[nodes$NODE_ID == 122537] %>% plot_pt(300)  # RB trib
+nodes@coords[nodes$NODE_ID == 122549] %>% plot_pt(100)  # grc init
+
+nodes[nodes$NODE_ID == 419876,]
+text(nodes, nodes$NODE_ID)
 
 # plot spots
 nodes@coords[nodes$NODE_ID == bear_id] %>% plot_pt(300)

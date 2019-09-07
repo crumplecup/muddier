@@ -25,6 +25,25 @@ birdseye <- function(pt,mag=40,flow=flowline,nod=nodes,map=uk)	{
 
 
 
+#' contr delta
+#'
+#' utility function for identifying tributaries
+#'
+#' @param vec is a numeric vector of contributing areas
+#' @return a vector of differences in contributing area per step
+#' @export
+
+contr_delta <- function(vec) {
+  len <- length(vec)
+  delta <- vector(len, mode = 'numeric')
+  for (i in 2:len) {
+    delta[i] <- vec[i-1] - vec[i]
+  }
+  delta
+}
+
+
+
 #' differ
 #'
 #' given a vector of length > 1, returns a vector differences between elements
@@ -80,6 +99,39 @@ get_bear <- function(coords)	{
   return(bear)
 }
 
+
+
+#' hipchain to outlet
+#'
+#' converts hipchain lengths to outlet distances given the outlet to hipchain ratio
+#'
+#' @param hipchain is a numeric vector of hipchain distances
+#' @param trib_hip is a numeric vector of tributary hipchain distances
+#' @param trib_out is a numeric vector of tributary outlet distances
+#' @param out_hip is a numeric vector of outlet to hipchain ratios
+#' @return outlet distances converted from hipchain distances
+#' @export
+hip_to_out <- function(hipchain, trib_hip, trib_out, out_hip)  {
+
+  out <- 0
+  up <- 0
+  down <- 0
+  flag <- 0
+
+  j <- 2
+  for (i in 1:length(hipchain))	{
+
+    while(hipchain[i] > trib_hip[j] & j < length(trib_hip)) j <- j + 1
+    up <- trib_out[j] - ((trib_hip[j] - hipchain[i]) * out_hip[j])
+    down <- trib_out[j-1] + ((hipchain[i] - trib_hip[j-1]) * out_hip[j])
+    flag <- 0
+    if((trib_out[j] - up) < (down - trib_out[j-1])) flag <- 1
+    if(flag) out[i] <- up
+    if(!flag) out[i] <- down
+
+  }
+  out
+}
 
 
 
@@ -174,6 +226,48 @@ inc_path <- function(coords)	{
 }
 
 
+#' interpolate by node
+#'
+#' interpolate values based on outlet distances of nodes
+#'
+#' @param vals is a vector of values at tributary nodes
+#' @param trib_out is a vector of tributary outlet distances
+#' @param trib_id is a vector of tributary node ids
+#' @param chan_out is a vector of channel outlet distances
+#' @param chan_id is a vector of channel node ids
+#' @return interpolated `vals` based on outlet distances of tribs
+#' @export
+
+interp_by_node <-
+  function(vals, trib_out, trib_id, chan_out, chan_id)  {
+    res <- vector(length(chan_id), mode = 'numeric')
+    j <- 1
+
+    for (i in seq_along(res))  {
+      if (chan_id[i] == trib_id[j])  {
+        res[i] <- vals[j]
+      }
+
+      if (chan_id[i] > trib_id[j] &
+          chan_id[i] < trib_id[j + 1])  {
+        trib_len <- trib_out[j + 1] - trib_out[j]
+        chan_len <- chan_out[i] - trib_out[j]
+        pct_len <- chan_len / trib_len
+        val_dif <- vals[j + 1] - vals[j]
+        res[i] <- vals[j] + (val_dif * pct_len)
+      }
+
+      if (chan_id[i] == trib_id[j + 1])  {
+        res[i] <- vals[j + 1]
+        if ((j + 1) < length(trib_id))
+          j <- j + 1
+      }
+    }
+    res
+  }
+
+
+
 
 #' low path
 #'
@@ -212,6 +306,35 @@ low_path <- function(coords,rad=25,map=uk)	{
 }
 
 
+#' plot point
+#'
+#' produces a plot centered around point `pt` zoomed in at factor `mag`
+#'
+#' @param pt is a coordinate pair
+#' @param mag is a magnification factor (numeric)
+#' @param so is a spatial object to plot the point upon
+#' @return a plot of `so` centered on `pt` at zoom factor `mag`
+#' @export
+
+plot_pt <- function(pt, mag = 1, so = nodes)  {
+  ext <- extent(so)
+  scale_x <- (ext[2] - ext[1]) / (2 * mag)
+  scale_y <- (ext[4] - ext[3]) / (2 * mag)
+
+  box <- 0
+  box[1] <- pt[1] - scale_x
+  box[2] <- pt[1] + scale_x
+  box[3] <- pt[2] - scale_y
+  box[4] <- pt[2] + scale_y
+
+  pic <- raster::crop(so, box)
+  plot(pic, pch = 20, col = 'slateblue')
+  lines(circ(pt, rad = scale_x * 0.15))
+  points(c(pt,pt) %>% matrix(ncol = 2) %>% t,
+         pch = 19, col = 'coral3')
+}
+
+
 
 #' snap point
 #'
@@ -228,6 +351,27 @@ snap <- function(pt, line = nodepath){
   dif <- ((line[,1] - pt[1])^2 + (line[,2] - pt[2])^2) %>% sqrt
   pt <- line[dif == min(dif), ]
   return(pt)
+}
+
+
+
+#' snap to node
+#'
+#' return id of node nearest to given outlet distance
+#'
+#' @param dist is a vector of outlet distances to place on the channel
+#' @param outlet is a vector of outlet distances from the channel node network
+#' @param ids is a vector of ids from the channel node network
+#' @return vector of ids from `ids` nearest to distances in `dist`
+#' @export
+
+snap_to_node <- function(dist, outlet, ids)  {
+  id <- 0
+  for (i in 1:length(dist))	{
+    difs <- outlet - dist[i]
+    id[i] <- ids[which.min(abs(difs))]
+  }
+  id
 }
 
 

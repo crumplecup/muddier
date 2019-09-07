@@ -21,6 +21,11 @@ knitr::opts_chunk$set(
 
 This research makes use of delivery probabilities estimated by the Miller/Burnett (MB) model, which I describe in the first section.  Second, I detail the process of georeferencing creeeks by matching Lancaster transect survey data to analogous positions in the MB linked node network representation of the channel.  Currently I have georeferenced Bear Creek and Knolwes Creek, while georeferences for Cedar, Hoffman and Golden Ridge Creeks should be forthcoming in the next few weeks.  For radiocarbon sample data, I describe the process of estimating deposit age by subtracting the inherited age distribution from the sample age via convolution.  Then we examine delivery probabilities in relation to cross-sectional area and valley width, and consider a number of weighting functions to calibrate MB probabilities using empiric deposition data from the Lancaster surveys.
 
+Knowles Creek was the first creek I georeferenced because it was the largest transect record in the Lancaster dataset, and once I had a single creek I focused on the process of weighting delivery probabilities using the Lancaster data as a proof of concept.  When adding Bear Creek to the dataset, I made several improvements to the georeferencing process by condensing code repetition into utility functions, so I am optimistic additional creek data will be forthcoming.  Now that we can examine weighting functions from a couple creeks, we can start to deliberate the relative merits and weaknesses of different potential weights.  Ultimately the goal is to improve the predictive accuracy of MB delivery probabilities by use of a weighting function derived from an empiric field record of deposits.  
+
+The additions of Cedar Creek and Golden Ridge Creek to the dataset are necessary to include georeferences for all radiocarbon sample sites.  The radiocarbon data includes diagrams of stratigraphy columns at the sample site, with layers classified as debris flows, fluvial fines and fluvial gravels and quantified in proportion to bank height.  This permits us to weight delivery probabilities by fraction debris flow, and combined with the transect data allows us to infer the volume of debris flows at sample sites.  We can describe flux in detail at sample sites by ascribing the residence time of the sample to the inferred volume.
+
+
 ## Miller/Burnett Model Output
 
 The Miller/Burnett model uses a 10 meter resolution DEM to estimate debris flow delivery probabilities along stream channels in the Siuslaw basin.  The two primary outputs of the model are a spatial points shapefile representing the channel as a linked node network, and a raster showing expected source intensities at the same resolution as the input DEM.  This research does not make use of the raster of source intensities, rather the primary interest is in the delivery probabilities associated with nodes in the linked-node network representation of the channel.
@@ -135,18 +140,31 @@ df_difs <- vector(length(mn_difs), mode = 'numeric')
 ff_difs <- vector(length(mn_difs), mode = 'numeric')
 fg_difs <- vector(length(mn_difs), mode = 'numeric')
 
+df_mns <- vector(length(mn_difs), mode = 'numeric')
+ff_mns <- vector(length(mn_difs), mode = 'numeric')
+fg_mns <- vector(length(mn_difs), mode = 'numeric')
+
 df_difs[charcoal$facies == 'DF'] <- mn_difs[charcoal$facies == 'DF']
 df_difs[charcoal$facies != 'DF'] <- NA
+df_mns[charcoal$facies == 'DF'] <- charcoal$mn[charcoal$facies == 'DF']
+df_mns[charcoal$facies != 'DF'] <- NA
+
 ff_difs[charcoal$facies == 'FF'] <- mn_difs[charcoal$facies == 'FF']
 ff_difs[charcoal$facies != 'FF'] <- NA
+ff_mns[charcoal$facies == 'FF'] <- charcoal$mn[charcoal$facies == 'FF']
+ff_mns[charcoal$facies != 'FF'] <- NA
+
 fg_difs[charcoal$facies == 'FG'] <- mn_difs[charcoal$facies == 'FG']
 fg_difs[charcoal$facies != 'FG'] <- NA
+fg_mns[charcoal$facies == 'FG'] <- charcoal$mn[charcoal$facies == 'FG']
+fg_mns[charcoal$facies != 'FG'] <- NA
 
-plot(fg_difs, pch = 20, col = 'coral3',
-     xlab = 'sample id', ylab = 'mean inherited age')
-points(ff_difs, pch = 20, col = 'slateblue')
-points(df_difs, pch = 20, col = 'forestgreen')
-legend('topleft', legend = c('debris flows', 'fluvial fines', 'fluvial gravels'),
+
+plot(fg_mns, fg_difs, pch = 20, col = 'coral3',
+     xlab = 'mean sample age', ylab = 'mean inherited age')
+points(ff_mns, ff_difs, pch = 20, col = 'slateblue')
+points(df_mns, df_difs, pch = 20, col = 'forestgreen')
+legend('bottomright', legend = c('debris flows', 'fluvial fines', 'fluvial gravels'),
        fill = c('forestgreen', 'slateblue', 'coral3'))
 ```
 
@@ -192,6 +210,7 @@ plot(lcontr_kn, lslope_kn, pch = 20, col = rgb(red=1, green=0, blue=.2, alpha=.5
 points(lcontr_br, lslope_br, pch = 20, col = rgb(red=.5, green=0, blue=.7, alpha=.5))
 abline(as_mod, lwd = 2, col = 'goldenrod')
 text(1,-2, paste0('R2 = ', round(sum_mod$adj.r.squared, 3)))
+legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 # estimate individual ks values using pulled theta
 log_ks_kn <- lslope_kn - as_theta * lcontr_kn
@@ -438,6 +457,15 @@ legend('topright', legend = c('knowles', 'bear'), fill = c('coral3', 'purple'))
 
 
 ```
+
+## Next Steps
+
+* Georeference Lancaster transect data for Cedar, Hoffman and Golden Ridge Creeks.
+* Georeference radiocarbon sites along creeks.
+    + Survey data includes strat columns and fraction debris flow.
+* Weight delivery probabilities at radiocarbon sites by fraction debris flow.
+* Compare Lancaster transect slope data to the DEM-derived MB slope.
+
 
 
 
