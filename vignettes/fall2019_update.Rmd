@@ -1,0 +1,554 @@
+---
+title: 'fall2019_update'
+author: 'Erik Rose'
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{fall2019_update}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+  ```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+## Fall Update
+
+
+## Georeferencing Lancaster Field Data
+
+Objectives
+
+* Fit Lancaster transect data to corresponding nodes on the linked-node network from the Miller/Burnett (M/B) model output using tributary junctions as landmarks.
+* For M/B nodes bewteen transects, estimate Lancaster variable values by linear interpolation based upon distance between transects.
+* Fit Lancaster radiocarbon sample sites to corresponding M/B nodes based upon converting the field hipchain length to M/B distance from outlet.
+
+
+```{r, fig.show='hold', echo=FALSE}
+library(muddier)
+library(sp)
+
+bear_trib_ids <- c(386219, 386239, 386243, 386258, 386269, 386278, 386299, 386314,
+              386331, 386348, 386359, 386378, 386389, 386409, 386440, 386452)
+bear_tribs <- creeks[creeks$NODE_ID %in% bear_trib_ids, ]
+
+plot(bear, pch = 20, col = 'slateblue')
+points(creeks[creeks$NODE_ID %in% 
+                creeks_radio$node_ids[creeks_radio$creek_name == 'bear'], ], 
+       pch = 20, col = 'goldenrod')
+points(bear_tribs, pch = 20, col = 'coral3')
+legend('bottomleft', legend = c('bear creek', 'trib junctions',
+                                'radiocarbon samples'),
+       fill = c('slateblue', 'coral3', 'goldenrod'))
+
+ced_trib_ids <- c(419085, 419112, 419131, 419154, 419164, 419187, 419240)
+ced_tribs <- cedar[cedar$NODE_ID %in% ced_trib_ids, ]
+
+plot(creeks[creeks$creek_name == 'cedar', ], pch = 20, col = 'slateblue')
+points(creeks[ced_tribs, ], 
+       pch = 20, col = 'coral3')
+legend('topleft', legend = c('cedar creek nodes', 'trib junctions'), 
+       fill = c('slateblue', 'coral3'))
+
+hoff_trib_ids <- c(431077, 431104, 431116, 431146, 431155, 431174, 431179,
+                   431194, 431219, 431228, 431240, 431252, 431269, 431284, 231290)
+hoff_tribs <- creeks[creeks$NODE_ID %in% hoff_trib_ids, ]
+
+plot(creeks[creeks$creek_name == 'hoffman', ], pch = 20, col = 'slateblue')
+points(creeks[hoff_tribs, ], 
+       pch = 20, col = 'coral3')
+legend('topleft', legend = c('hoffman creek nodes', 'trib junctions'), 
+       fill = c('slateblue', 'coral3'))
+
+
+plot(knowles, pch = 20, col = 'slateblue')
+points(creeks[creeks$creek_name == 'knowles',], pch = 20, col = 'forestgreen')
+points(creeks[creeks$NODE_ID %in% 
+                creeks_radio$node_ids[creeks_radio$creek_name == 'knowles'], ], 
+       pch = 20, col = 'goldenrod')
+points(landmarks[,1:2], pch = 20, col = 'coral3')
+legend('bottomleft', legend = c('knowles creek nodes', 'trib juctions',
+                             'radiocarbon samples', 'transect survey'), 
+       fill = c('slateblue', 'coral3', 'goldenrod', 'forestgreen'))
+```
+
+
+## Debris Flow Residence Times
+
+Objectives
+
+* Estimate residence times of stream deposits based upon radiocarbon sample age distributions from charcoal embedded in deposits.
+    + Estimate the distribution of inherited ages (ages of charcoal before entrained in stream deposit) at sites with multiple samples.
+    + Fit the empiric inherited age distribution for each deposit facies to a phase-type distribution.
+    + Subtract the fitted inherited age distribution from the sample age distribution via convolution to estimate residence time.
+
+```{r, fig.show='hold', echo=FALSE}
+# plot inherited age CDF for debris flows
+library(magrittr)
+index <- char_pmfs %>% rownames %>% as.numeric %>% sort
+plot(index, df_cdf, lwd = 2, type = 'l', xlim = c(0, 11000),
+     xlab = 'inherited age (debris flows)',
+     ylab = 'proportion <= age')  # empiric cdf
+lines(index, df_cdfs_cis[1,], lty = 2, col = 'coral3', lwd = 2)  # lower 97.5% CI
+lines(index, df_cdfs_cis[3,], lty = 2, col = 'coral3', lwd = 2)  # upper 97.5% CI
+lines(index, unlist(df_ph_cdf), lty = 2, col = 'slateblue', lwd = 2)  # phase-type fit
+legend('bottomright', legend = c('empiric', '95% CIs', 'phase-type fit'),
+       fill = c('black', 'coral3', 'slateblue'))
+
+# expected mean residence time of corrected pmfs
+cor_mns <- vector(ncol(cor_pmfs), mode = 'numeric')
+for (i in 1:ncol(cor_pmfs))  {
+  cor_mns[i] <- weighted.mean(index, cor_pmfs[,i])
+}
+
+# difference in uncorrected and corrected mean residence times
+mn_difs <- charcoal$mn - cor_mns
+
+# plot residence time differences colored by facies
+df_difs <- vector(length(mn_difs), mode = 'numeric')
+ff_difs <- vector(length(mn_difs), mode = 'numeric')
+fg_difs <- vector(length(mn_difs), mode = 'numeric')
+
+df_mns <- vector(length(mn_difs), mode = 'numeric')
+ff_mns <- vector(length(mn_difs), mode = 'numeric')
+fg_mns <- vector(length(mn_difs), mode = 'numeric')
+
+df_difs[charcoal$facies == 'DF'] <- mn_difs[charcoal$facies == 'DF']
+df_difs[charcoal$facies != 'DF'] <- NA
+df_mns[charcoal$facies == 'DF'] <- charcoal$mn[charcoal$facies == 'DF']
+df_mns[charcoal$facies != 'DF'] <- NA
+
+ff_difs[charcoal$facies == 'FF'] <- mn_difs[charcoal$facies == 'FF']
+ff_difs[charcoal$facies != 'FF'] <- NA
+ff_mns[charcoal$facies == 'FF'] <- charcoal$mn[charcoal$facies == 'FF']
+ff_mns[charcoal$facies != 'FF'] <- NA
+
+fg_difs[charcoal$facies == 'FG'] <- mn_difs[charcoal$facies == 'FG']
+fg_difs[charcoal$facies != 'FG'] <- NA
+fg_mns[charcoal$facies == 'FG'] <- charcoal$mn[charcoal$facies == 'FG']
+fg_mns[charcoal$facies != 'FG'] <- NA
+
+
+plot(fg_mns, fg_difs, pch = 20, col = 'coral3',
+     xlab = 'mean sample age', ylab = 'mean inherited age')
+points(ff_mns, ff_difs, pch = 20, col = 'slateblue')
+points(df_mns, df_difs, pch = 20, col = 'forestgreen')
+legend('bottomright', legend = c('debris flows', 'fluvial fines', 'fluvial gravels'),
+       fill = c('forestgreen', 'slateblue', 'coral3'))
+```
+
+
+
+## Examining Delivery Probabilities
+
+Objectives
+
+* Use the empiric record of stream deposits to calibrate M/B delivery probabilities.
+* Examine potential weights for M/B delivery probabilities:
+    + Cross-sectional area, valley width and area-slope relation.
+    + Plot potential weighting variables against delivery probability for visual inspection.
+
+### Weighting by Area-Slope Relation
+
+We can fit the area-slope relation to a power law where slope $S$ relates to contributing area $A$ by the function:
+
+$$ S = k_sA^{-\theta}  $$
+
+We can relate logged slope to logged contributing area using a linear model, so that:
+
+$$  log(S) = log(k_sA^{-\theta})  $$
+$$  log(S) = log(k_s) - \theta log(A)  $$
+
+where $\theta$ is the slope of a linear model with intercept $log(k_s)$.  Using the estimated $\theta$ for all surveyed creeks, we can back-calculate an individual $k_s$ for each channel node holding $\theta$ constant.
+
+
+```{r, fig.show='hold', echo=FALSE}
+# contributing area vs. delivery probability
+plot(creeks$contr_area, creeks$DebrisFlow, 
+     pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'contributing area (km2)', ylab = 'delivery probability',
+     main = 'contributing area vs. delivery probability')
+points(creeks$contr_area[creeks$creek_name == 'bear'], 
+       creeks$DebrisFlow[creeks$creek_name == 'bear'], 
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$contr_area[creeks$creek_name == 'cedar'], 
+       creeks$DebrisFlow[creeks$creek_name == 'cedar'], 
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$contr_area[creeks$creek_name == 'hoffman'], 
+       creeks$DebrisFlow[creeks$creek_name == 'hoffman'], 
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$contr_area[creeks$creek_name == 'knowles'], 
+       creeks$DebrisFlow[creeks$creek_name == 'knowles'], 
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+legend('topright', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+# find ks values in S = ks(A^theta)
+
+lslope <- (creeks$GRADIENT+.015) %>% log # log slope with offset for negative grads
+lcontr <- creeks$contr_area %>% log # log contr area
+as_mod <- lm(lslope ~ lcontr)  # fit AS to power law
+as_theta <- as_mod$coefficients[2]  # pull theta value
+sum_mod <- summary(as_mod)
+
+plot(lcontr, lslope, pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log(contributing area)', ylab = 'log(slope)',
+     main = 'log contributing area vs. log slope')
+points(lcontr[creeks$creek_name == 'bear'], 
+       lslope[creeks$creek_name == 'bear'], 
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(lcontr[creeks$creek_name == 'cedar'], 
+       lslope[creeks$creek_name == 'cedar'], 
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(lcontr[creeks$creek_name == 'hoffman'], 
+       lslope[creeks$creek_name == 'hoffman'], 
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(lcontr[creeks$creek_name == 'knowles'], 
+       lslope[creeks$creek_name == 'knowles'], 
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+abline(as_mod, lwd = 2, col = 'gray')
+text(1,-2, paste0('R2 = ', round(sum_mod$adj.r.squared, 3)))
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+# estimate individual ks values using pulled theta
+log_ks <- lslope - as_theta * lcontr
+ks <- exp(log_ks)
+creeks$p_ks <- creeks$DebrisFlow / ks
+
+
+creeks$log_df <- log10(creeks$DebrisFlow)
+creeks$log_xsec <- log10(creeks$xsec_area + .1)
+creeks$log_pks <- log10(creeks$p_ks)
+creeks$log_val <- log10(creeks$valley_width + .1)
+log_xsec_df <- bin_by(creeks$log_df, creeks$log_xsec)
+log_xsec_pks <- bin_by(creeks$log_pks, creeks$log_xsec)
+log_val_df <- bin_by(creeks$log_df, creeks$log_val)
+log_val_pks <- bin_by(creeks$log_pks, creeks$log_val)
+
+
+plot(creeks$log_df, creeks$log_xsec, 
+     pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 delivery probability', ylab = 'log10 cross-sectional area (m2)',
+     main = 'log delivery prob vs. log x-sec area')
+points(creeks$log_df[creeks$creek_name == 'bear'], 
+       creeks$log_xsec[creeks$creek_name == 'bear'], 
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'cedar'], 
+       creeks$log_xsec[creeks$creek_name == 'cedar'], 
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'hoffman'], 
+       creeks$log_xsec[creeks$creek_name == 'hoffman'], 
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'knowles'], 
+       creeks$log_xsec[creeks$creek_name == 'knowles'], 
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(log_xsec_df$x, log_xsec_df$y, lwd = 2, col = 'gray')
+points(log_xsec_df$x, log_xsec_df$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+
+plot(creeks$log_pks, creeks$log_xsec, 
+     pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 P/ks', ylab = 'log10 cross-sectional area (m2)',
+     main = 'log P/ks vs. log x-sec area')
+points(creeks$log_pks[creeks$creek_name == 'bear'], 
+       creeks$log_xsec[creeks$creek_name == 'bear'], 
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'cedar'], 
+       creeks$log_xsec[creeks$creek_name == 'cedar'], 
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'hoffman'], 
+       creeks$log_xsec[creeks$creek_name == 'hoffman'], 
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'knowles'], 
+       creeks$log_xsec[creeks$creek_name == 'knowles'], 
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(log_xsec_pks$x, log_xsec_pks$y, lwd = 2, col = 'gray')
+points(log_xsec_pks$x, log_xsec_pks$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+# valley width
+
+plot(creeks$log_df, creeks$log_val, 
+     pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 delivery probability', ylab = 'log10 valley width (m)',
+     main = 'log delivery prob vs. log valley width')
+points(creeks$log_df[creeks$creek_name == 'bear'], 
+       creeks$log_val[creeks$creek_name == 'bear'], 
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'cedar'], 
+       creeks$log_val[creeks$creek_name == 'cedar'], 
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'hoffman'], 
+       creeks$log_val[creeks$creek_name == 'hoffman'], 
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'knowles'], 
+       creeks$log_val[creeks$creek_name == 'knowles'], 
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(log_val_df$x, log_val_df$y, lwd = 2, col = 'gray')
+points(log_val_df$x, log_val_df$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+
+plot(creeks$log_pks, creeks$log_val, 
+     pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 P/ks', ylab = 'log10 valley width (m)',
+     main = 'log P/ks vs. log valley width')
+points(creeks$log_pks[creeks$creek_name == 'bear'], 
+       creeks$log_val[creeks$creek_name == 'bear'], 
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'cedar'], 
+       creeks$log_val[creeks$creek_name == 'cedar'], 
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'hoffman'], 
+       creeks$log_val[creeks$creek_name == 'hoffman'], 
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'knowles'], 
+       creeks$log_val[creeks$creek_name == 'knowles'], 
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(log_val_pks$x, log_val_pks$y, lwd = 2, col = 'gray')
+points(log_val_pks$x, log_val_pks$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+
+
+
+```
+
+
+## Weighting Delivery Probabilities
+
+Let $P$ represent delivery probabilities, and let $F_P (P_0)$ be the CDF of delivery probabilities.  Let $V$ represent depositional volume, and let $F_V (P_0)$ be the CDF of volume with respect to $P$.  The volume weighting function $wt_V$ over an interval $P_i$ to $P_{i + 1}$ along $P$ is:
+
+$$ wt_V (P_i, P_{i+1}) = \frac{F_V (P_{i+1}) - F_V (P_i)}{F_P (P_{i+1}) - F_P (P_i)} $$
+
+
+Using $K$ for the ratio of $P/k_s$, let $F_V(K_0)$ be the CDF of $V$ with respect to $P/k_s$.  We can then compare change in the CDF of $V$ to change in the CDF of $K$.  The volume weighting function $wt_{V_K}$ over an interval $K_i$ to $K_{i + 1}$ along $K$ is:
+
+$$ wt_{V_K} (K_i, K_{i+1}) = \frac{F_V (K_{i+1}) - F_V (K_i)}{F_K (K_{i+1}) - F_K (K_i)} $$
+
+```{r, fig.show='hold', echo=FALSE}
+
+# weighting function for delivery probs
+
+# delivery prob index
+p_index <- sort(creeks$DebrisFlow)
+
+# cdf of delivery probs
+p_cdf <- to_cdf(p_index/sum(p_index))
+
+# change in delivery prob cdf per change in index
+delta_p <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_p))  {
+  delta_p[i] <- p_cdf[i] - p_cdf[i-1]
+}
+
+# cdf of volume by prob index
+v_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(v_cdf))  {
+  v_cdf[i] <- sum(creeks$xsec_area[creeks$DebrisFlow <= p_index[i]]) /
+    sum(creeks$xsec_area)
+}
+
+# change in volume cdf per change in index
+delta_v <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_v))  {
+  delta_v[i] <- v_cdf[i] - v_cdf[i-1]
+}
+
+# change in volume cdf per change in del prob cdf
+p_wt <- delta_v / delta_p
+log_pwt <- log10(p_wt + .01)
+bin_log_pwt <- bin_by(creeks$log_df, log_pwt, 10)
+
+plot(creeks$log_df, log_pwt, pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 delivery probability', ylab = 'log10 wt_V')
+points(creeks$log_df[creeks$creek_name == 'bear'], 
+       log_pwt[creeks$creek_name == 'bear'], pch = 20,
+       col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'cedar'], 
+       log_pwt[creeks$creek_name == 'cedar'], pch = 20,
+       col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'hoffman'], 
+       log_pwt[creeks$creek_name == 'hoffman'], pch = 20,
+       col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'knowles'], 
+       log_pwt[creeks$creek_name == 'knowles'], pch = 20,
+       col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(bin_log_pwt$x, bin_log_pwt$y, lwd = 2, col = 'gray')
+points(bin_log_pwt$x, bin_log_pwt$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+# P/ks index
+k_index <- sort(creeks$p_ks)
+
+# cdf of F_K
+k_cdf <- vector(length(k_index), mode = 'numeric')
+for (i in seq_along(k_cdf))  {
+  k_cdf[i] <- sum(creeks$p_ks[creeks$p_ks <= k_index[i]]) /
+    sum(creeks$p_ks)
+}
+
+# change in p_ks cdf per change in index (F_K(P_0))
+delta_k <- vector(length(k_index), mode = 'numeric')
+for (i in 2:length(delta_k))  {
+  delta_k[i] <- k_cdf[i] - k_cdf[i-1]
+}
+
+# cdf of F_V(K)
+vk_cdf <- vector(length(k_index), mode = 'numeric')
+for (i in seq_along(k_cdf))  {
+  vk_cdf[i] <- sum(creeks$xsec_area[creeks$p_ks <= k_index[i]]) /
+    sum(creeks$xsec_area)
+}
+
+# change in F_V(K_0)
+delta_vk <- vector(length(k_index), mode = 'numeric')
+for (i in 2:length(delta_vk))  {
+  delta_vk[i] <- vk_cdf[i] - vk_cdf[i-1]
+}
+
+
+# change in volume cdf per change in del prob cdf
+vk_wt <- delta_vk / delta_k
+log_vwt <- log10(vk_wt + .01)
+bin_log_vwt <- bin_by(creeks$log_pks, log_vwt, 10)
+
+plot(creeks$log_pks, log_vwt, pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 P/ks', ylab = 'log10 wt_Vk')
+points(creeks$log_pks[creeks$creek_name == 'bear'], 
+       log_vwt[creeks$creek_name == 'bear'], pch = 20,
+       col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'cedar'], 
+       log_vwt[creeks$creek_name == 'cedar'], pch = 20,
+       col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'hoffman'], 
+       log_vwt[creeks$creek_name == 'hoffman'], pch = 20,
+       col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'knowles'], 
+       log_vwt[creeks$creek_name == 'knowles'], pch = 20,
+       col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(bin_log_vwt$x, bin_log_vwt$y, lwd = 2, col = 'gray')
+points(bin_log_vwt$x, bin_log_vwt$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+
+```
+
+We can follow the same procedure using top valley width, with distance $D$ representing valley width, let $F_D (P_0)$ be the CDF of $D$ with respect to $P$.  The valley width weighting function $wt_D$ over an interval $P_i$ to $P_{i + 1}$ along $P$ is:
+
+$$ wt_D (P_i, P_{i+1}) = \frac{F_D (P_{i+1}) - F_D (P_i)}{F_P (P_{i+1}) - F_P (P_i)} $$
+
+Using $K$ for the ratio of $P/k_s$, let $F_D(K_0)$ be the CDF of $D$ with respect to $P/k_s$.  The $D_K$ weighting function $wt_{D_K}$ over an interval $K_i$ to $K_{i + 1}$ along $K$ is:
+
+$$ wt_{D_K} (K_i, K_{i+1}) = \frac{F_D (K_{i+1}) - F_D (K_i)}{F_K (K_{i+1}) - F_K (K_i)} $$
+
+```{r, fig.show='hold', echo=FALSE}
+
+# cdf of top width by prob index
+top_p_cdf <- vector(length(p_index), mode = 'numeric')
+for (i in seq_along(top_p_cdf))  {
+  top_p_cdf[i] <- sum(creeks$valley_width[creeks$DebrisFlow <= p_index[i]]) /
+    sum(creeks$valley_width)
+}
+
+# change in top width cdf per change in index
+delta_p_top <- vector(length(p_index), mode = 'numeric')
+for (i in 2:length(delta_p_top))  {
+  delta_p_top[i] <- top_p_cdf[i] - top_p_cdf[i-1]
+}
+
+# change in top width cdf per change in del prob cdf
+top_p_wt <- delta_p_top / delta_p
+log_top <- log10(top_p_wt + .01)
+bin_log_top <- bin_by(creeks$log_df, log_top, 10)
+
+# same process for k index
+top_k_cdf <- vector(length(k_index), mode = 'numeric')
+for (i in seq_along(top_k_cdf))  {
+  top_k_cdf[i] <- sum(creeks$valley_width[creeks$p_ks <= k_index[i]]) /
+    sum(creeks$valley_width)
+}
+
+delta_k_top <- vector(length(k_index), mode = 'numeric')
+for (i in 2:length(delta_k_top))  {
+  delta_k_top[i] <- top_k_cdf[i] - top_k_cdf[i-1]
+}
+
+top_k_wt <- delta_k_top / delta_k
+log_topk <- log10(top_k_wt + .01)
+bin_log_topk <- bin_by(creeks$log_pks, log_topk, 10)
+
+plot(creeks$log_df, log_top, pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 delivery probability', ylab = 'log10 wt_D')
+points(creeks$log_df[creeks$creek_name == 'bear'], 
+       log_top[creeks$creek_name == 'bear'], pch = 20,
+       col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'cedar'], 
+       log_top[creeks$creek_name == 'cedar'], pch = 20,
+       col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'hoffman'], 
+       log_top[creeks$creek_name == 'hoffman'], pch = 20,
+       col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_df[creeks$creek_name == 'knowles'], 
+       log_top[creeks$creek_name == 'knowles'], pch = 20,
+       col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(bin_log_top$x, bin_log_top$y, lwd = 2, col = 'gray')
+points(bin_log_top$x, bin_log_top$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+plot(creeks$log_pks, log_topk, pch = 20, col = rgb(red=0, green=0, blue=0, alpha=.01),
+     xlab = 'log10 P/ks', ylab = 'log10 wt_Dk')
+points(creeks$log_pks[creeks$creek_name == 'bear'], 
+       log_topk[creeks$creek_name == 'bear'], pch = 20,
+       col = rgb(red=.258, green=.701, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'cedar'], 
+       log_topk[creeks$creek_name == 'cedar'], pch = 20,
+       col = rgb(red=.961, green=.529, blue=.258, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'hoffman'], 
+       log_topk[creeks$creek_name == 'hoffman'], pch = 20,
+       col = rgb(red=.678, green=.258, blue=.961, alpha=.15))
+points(creeks$log_pks[creeks$creek_name == 'knowles'], 
+       log_topk[creeks$creek_name == 'knowles'], pch = 20,
+       col = rgb(red=.231, green=.631, blue=.306, alpha=.15))
+lines(bin_log_topk$x, bin_log_topk$y, lwd = 2, col = 'gray')
+points(bin_log_topk$x, bin_log_topk$y)
+legend('bottomleft', legend = c('bear', 'cedar', 'hoffman', 'knowles'), 
+       fill = c('slateblue', 'goldenrod', 'purple', 'forestgreen'))
+
+
+```
+
+## Next Steps
+
+* Georeference Lancaster transect data for Golden Ridge Creek.
+* Georeference radiocarbon sites along Cedar and Golden Ridge creeks.
+    + Survey data includes strat columns and fraction debris flow.
+* Weight delivery probabilities at radiocarbon sites by fraction debris flow.
+* Compare Lancaster transect slope data to the DEM-derived MB slope.
+
+
+
+
+
+
+
+
+
+
+
+
+

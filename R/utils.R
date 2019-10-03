@@ -1,6 +1,48 @@
 # Functions for Deriving Inherited Age Distributions
 
 
+#' bin by
+#'
+#' Divides a vector by length into bins, takes the average of a corresponding variable.
+#'
+#' @param vec is the vector to divide by
+#' @param var is the variable to average
+#' @param bins is the number of bins to divide into
+#' @return a plot and dataframe of mean `var` per bin
+#' @export
+
+bin_by <- function(vec, var, bins = 10)  {
+  mat <- matrix(c(vec,var), ncol = 2)
+  mat <- mat[order(vec), ]
+  vec_len <- length(vec)
+  bin_len <- ceiling(vec_len / bins)
+  vec_ids <- 1:length(vec)
+  bin_list <- list()
+  ranges <- vector(bins, mode = 'character')
+  xs <- vector(bins, mode = 'numeric')
+  ys <- vector(bins, mode = 'numeric')
+  for (i in 1:bins)  {
+    if (i == 1)  {
+      bin_list[[i]] <- vec_ids[vec_ids <= bin_len]
+      bin <- mat[bin_list[[i]], ]
+      ranges[i] <- paste0(round(bin[1,1], 2),' to ', round(bin[nrow(bin), 1], 2))
+      xs[i] <- mean(bin[,1])
+      ys[i] <- mean(bin[,2])
+    }
+
+    if (i > 1)  {
+      bin_list[[i]] <- vec_ids[vec_ids > (i-1) * bin_len &
+                                 vec_ids <= i * bin_len]
+      bin <- mat[bin_list[[i]], ]
+      ranges[i] <- paste0(round(bin[1,1], 2),' to ', round(bin[nrow(bin), 1], 2))
+      xs[i] <- mean(bin[,1])
+      ys[i] <- mean(bin[,2])
+    }
+  }
+  df <- data.frame(x = xs, y = ys, rng = ranges)
+  return(df)
+}
+
 #' boot ids
 #'
 #' wrapper for lapply, given a rank list from a site, returns

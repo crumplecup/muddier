@@ -248,19 +248,26 @@ interp_by_node <-
         res[i] <- vals[j]
       }
 
-      if (chan_id[i] > trib_id[j] &
-          chan_id[i] < trib_id[j + 1])  {
-        trib_len <- trib_out[j + 1] - trib_out[j]
-        chan_len <- chan_out[i] - trib_out[j]
-        pct_len <- chan_len / trib_len
-        val_dif <- vals[j + 1] - vals[j]
-        res[i] <- vals[j] + (val_dif * pct_len)
-      }
+      if (j < length(trib_id)) {
+        if (chan_id[i] > trib_id[j] &
+            chan_id[i] < trib_id[j + 1])  {
+          trib_len <- trib_out[j + 1] - trib_out[j]
+          val_dif <- vals[j + 1] - vals[j]
+          len_up <- chan_out[i] - trib_out[j]
+          len_dwn <- trib_out[j+1] - chan_out[i]
+          if (len_up <= len_dwn) {
+            pct_len <- len_up / trib_len
+            res[i] <- vals[j] + (val_dif * pct_len)
+          } else {
+            pct_len <- len_dwn / trib_len
+            res[i] <- vals[j+1] - (val_dif * pct_len)
+          }
+        }
 
-      if (chan_id[i] == trib_id[j + 1])  {
-        res[i] <- vals[j + 1]
-        if ((j + 1) < length(trib_id))
+        if (chan_id[i] == trib_id[j + 1])  {
+          res[i] <- vals[j+1]
           j <- j + 1
+        }
       }
     }
     res

@@ -98,6 +98,10 @@ legend('bottomleft', legend = c('bear creek', 'trib junctions'),
 ```
 
 
+## Georeferencing Cedar Creek
+
+
+
 ## Debris Flow Residence Times
 
 The Lancaster dataset includes 370 radiocarbon-dated charcoal samples from stream bank deposits in Knowles, Bear, Cedar and Golden Ridge creeks.  The sample ages can characterize the residence times of debris flows and fluvial deposits in stream, as the deposit cannot be older than the youngest piece of charcoal in the deposit.  The period of time a piece of charcoal spends before becoming entrained in a stream deposit is the inherited age, and the sample age of the charcoal is the sum of the residence time of the deposit and the inherited age of the charcoal.
