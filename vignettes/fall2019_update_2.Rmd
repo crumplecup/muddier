@@ -4,7 +4,7 @@ author: 'Erik Rose'
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{fall2019_update}
+  %\VignetteIndexEntry{fall2019_update_2}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
