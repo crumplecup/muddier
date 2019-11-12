@@ -3,10 +3,10 @@
 
 #' bin by
 #'
-#' Divides a vector by length into bins, takes the average of a corresponding variable.
+#' Divides a vector by length into bins, takes the sum of a corresponding variable.
 #'
 #' @param vec is the vector to divide by
-#' @param var is the variable to average
+#' @param var is the variable to sum
 #' @param bins is the number of bins to divide into
 #' @return a plot and dataframe of mean `var` per bin
 #' @export
@@ -27,7 +27,7 @@ bin_by <- function(vec, var, bins = 10)  {
       bin <- mat[bin_list[[i]], ]
       ranges[i] <- paste0(round(bin[1,1], 2),' to ', round(bin[nrow(bin), 1], 2))
       xs[i] <- mean(bin[,1])
-      ys[i] <- mean(bin[,2])
+      ys[i] <- sum(bin[,2])
     }
 
     if (i > 1)  {
@@ -36,7 +36,7 @@ bin_by <- function(vec, var, bins = 10)  {
       bin <- mat[bin_list[[i]], ]
       ranges[i] <- paste0(round(bin[1,1], 2),' to ', round(bin[nrow(bin), 1], 2))
       xs[i] <- mean(bin[,1])
-      ys[i] <- mean(bin[,2])
+      ys[i] <- sum(bin[,2])
     }
   }
   df <- data.frame(x = xs, y = ys, rng = ranges)

@@ -9,7 +9,7 @@ bin_by(vec, var, bins = 10)
 \arguments{
 \item{vec}{is the vector to divide by}
 
-\item{var}{is the variable to average}
+\item{var}{is the variable to sum}
 
 \item{bins}{is the number of bins to divide into}
 }
@@ -17,5 +17,5 @@ bin_by(vec, var, bins = 10)
 a plot and dataframe of mean `var` per bin
 }
 \description{
-Divides a vector by length into bins, takes the average of a corresponding variable.
+Divides a vector by length into bins, takes the sum of a corresponding variable.
 }
