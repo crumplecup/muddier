@@ -243,6 +243,39 @@ convo_ranks <- function(vec, pmfs = char_pmfs)  {
 }
 
 
+#' discrete bin
+#'
+#' split a vector of values into discrete bins of roughly equal size
+#'
+#'@param vals is the vector of values to bin
+#'@param bin_len is the size of bin
+#'@return a list that splits vals into elements of length `bin_len`
+#'@export
+
+discrete_bin <- function(vals, bin_len) {
+  n <- max(vals)
+  bins <- ceiling(n / bin_len)
+  marks <- bin_len
+
+  for (i in 2:(bins-1)) {
+    marks[i] <- marks[i-1] + bin_len
+  }
+  marks[bins] <- ceiling(n)
+
+  bin_vals <- list()
+  for (i in 1:bins) {
+    if (i == 1) {
+      bin_vals[[i]] <- vals[vals <= marks[i]]
+    }
+    if (i > 1)  {
+      bin_vals[[i]] <- vals[vals > marks[i-1] & vals <= marks[[i]]]
+    }
+  }
+  return(bin_vals)
+}
+
+
+
 
 #' distribute
 #'
@@ -281,6 +314,26 @@ draw_exp_decay <- function(n,k)  {
 }
 
 
+#' fit bins
+#'
+#' fit an exponential distribution to binned data
+#'
+#' @param bins is the binned data to fit
+#' @return exponential fits for each bin, gof stats and CIs
+#' @export
+
+fit_bins <- function(bins)  {
+  fits <- list()
+  gofs <- list()
+  boots <- array(0, c(bins, 4))
+  for (i in seq_along(bins))  {
+    fits[[i]] <- fitdistrplus::fitdist(as.numeric(bins[[i]]))
+    gofs[[i]] <- fitdistrplus::gofstat(fits[[i]])
+    boots[i, 1] <- summary(fits[[i]])$estimate
+    boots[i, 2:4] <- fitdistrplus::bootdist(fits[[i]])$CI
+  }
+  return(list(boots, fits, gofs))
+}
 
 
 #' Find the PMF of values vector.

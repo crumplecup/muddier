@@ -1,10 +1,10 @@
 ---
-title: 'teacup_model'
+title: 'fire_history'
 author: 'Erik Rose'
 date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{teacup_model}
+  %\VignetteIndexEntry{fire_history}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -16,6 +16,82 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 ```
+
+### Estimating Fire Interarrival Times From Charcoal Ages in Stream Bank Deposits
+
+```{r}
+library(muddier)
+library(magrittr)
+
+nms <- substr(charcoal$family, start = 1, stop = 2)
+nms[nms == 'BC'] <- 'bear'
+nms[nms == 'GR'] <- 'grc'
+nms[nms == 'CC'] <- 'cedar'
+nms[nms == 'UK'] <- 'knowles'
+nms[nms == 'LK'] <- 'knowles'
+nms[nms == 'DF'] <- 'knowles'
+nms[nms == 'T8'] <- 'trib_8'
+nms[nms == 'Da'] <- 'knowles'
+
+index <- char_pmfs %>% rownames %>% as.numeric
+mat <- as.matrix(char_pmfs)
+north_mat <- mat[,nms %in% c('knowles','bear','cedar','trib_8')]
+south_mat <- mat[,nms == 'grc']
+north_n <- nrow(charcoal[nms %in% c('knowles','bear','cedar','trib_8')])
+south_n <- nrow(charcoal[nms == 'grc'])
+north_mns <- array(0, c(north_n-1, 1))
+south_mns <- array(0, c(south_n-1, 1))
+north_ar <- array(0, c(north_n-1, nrow(char_pmfs)))
+south_ar <- array(0, c(south_n-1, nrow(char_pmfs)))
+north_age <- charcoal$mn[nms %in% c('knowles','bear','cedar','trib_8')]
+south_age <- charcoal$mn[nms == 'grc']
+for(i in 1:(north_n-1)) {
+  north_ar[i,] <- convo(north_mat[,i+1], north_mat[,i], index)
+  north_mns[i] <- weighted.mean(sort(index), north_ar[i,])
+}
+for(i in 1:(south_n-1)) {
+  south_ar[i,] <- convo(south_mat[,i+1], south_mat[,i], index)
+  south_mns[i] <- weighted.mean(sort(index), south_ar[i,])
+}
+
+north_nms <- nms[nms %in% c('knowles','bear','cedar','trib_8')]
+south_nms <- nms[nms == 'grc']
+
+df <- data.frame(mns = c(north_mns, south_mns), 
+                 nms = c(north_nms[-1], south_nms[-1]),
+                 age = c(north_age[-1], south_age[-1]))
+
+setwd('/home/crumplecup/work')
+png('interarrival_times1.png',
+    width = 7, height = 5, units = 'in', res = 300)
+plot(log10(df[,3]+51), log10(df[,1]),
+     xlab = 'log10 sample age', ylab = 'log10 interarrival time',
+     pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.05))
+points(log10(df[df$nms == 'knowles',3]+51), log10(df[df$nms == 'knowles',1]),
+       pch = 20, col = rgb(red=.258, green=.701, blue=.961, alpha=.25))
+points(log10(df[df$nms == 'bear',3]+51), log10(df[df$nms == 'bear',1]),
+       pch = 20, col = rgb(red=.961, green=.529, blue=.258, alpha=.25))
+points(log10(df[df$nms == 'cedar',3]+51), log10(df[df$nms == 'cedar',1]),
+       pch = 20, col = rgb(red=.678, green=.258, blue=.961, alpha=.25))
+points(log10(df[df$nms == 'grc',3]+51), log10(df[df$nms == 'grc',1]),
+       pch = 20, col = rgb(red=.231, green=.631, blue=.306, alpha=.25))
+points(log10(df[df$nms == 'trib_8',3]+51), log10(df[df$nms == 'trib_8',1]),
+       pch = 20, col = rgb(red=.306, green=.235, blue=.153, alpha=.25))
+points(log10(df[df$mns < 5, 3]+51), log10(df[df$mns < 5, 1]), 
+       pch = 20, col = rgb(red=.671, green=.106, blue=.106, alpha=.35))
+legend('topleft', legend = c('bear','cedar','knowles','grc','trib 8','t < 5yrs'),
+       fill = c(rgb(red=.961, green=.529, blue=.258, alpha=.25),
+                rgb(red=.678, green=.258, blue=.961, alpha=.25),
+                rgb(red=.258, green=.701, blue=.961, alpha=.25),
+                rgb(red=.231, green=.631, blue=.306, alpha=.25),
+                rgb(red=.306, green=.235, blue=.153, alpha=.25),
+                rgb(red=.671, green=.106, blue=.106, alpha=.35)))
+dev.off()
+
+
+```
+
+
 
 ### Characterizing landslide debris flows in OCR headwater streams
 
