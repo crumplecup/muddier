@@ -78,6 +78,27 @@ build_mats <- function(x,y)  {
 }
 
 
+#' cdf_dif
+#'
+#' returns a vector of differences between increments of `cdf`
+#'
+#' @param cdf is a numeric vector increasing monotonically between zero and 1
+#' @return a vector of differences between increments of `cdf`
+#' @export
+cdf_dif <- function(cdf) {
+  dif <- 0
+  for (i in seq_along(cdf)) {
+    if (i == 1) {
+      dif[i] <- cdf[i]
+    }
+    if (i > 1) {
+      dif[i] <- cdf[i] - cdf[i-1]
+    }
+  }
+  return(dif)
+}
+
+
 #' derived pmf by subtraction
 #'
 #' Given two pmfs and an age vector, returns the derived pmf of the convolution y-x.
@@ -243,39 +264,6 @@ convo_ranks <- function(vec, pmfs = char_pmfs)  {
 }
 
 
-#' discrete bin
-#'
-#' split a vector of values into discrete bins of roughly equal size
-#'
-#'@param vals is the vector of values to bin
-#'@param bin_len is the size of bin
-#'@return a list that splits vals into elements of length `bin_len`
-#'@export
-
-discrete_bin <- function(vals, bin_len) {
-  n <- max(vals)
-  bins <- ceiling(n / bin_len)
-  marks <- bin_len
-
-  for (i in 2:(bins-1)) {
-    marks[i] <- marks[i-1] + bin_len
-  }
-  marks[bins] <- ceiling(n)
-
-  bin_vals <- list()
-  for (i in 1:bins) {
-    if (i == 1) {
-      bin_vals[[i]] <- vals[vals <= marks[i]]
-    }
-    if (i > 1)  {
-      bin_vals[[i]] <- vals[vals > marks[i-1] & vals <= marks[[i]]]
-    }
-  }
-  return(bin_vals)
-}
-
-
-
 
 #' distribute
 #'
@@ -314,26 +302,6 @@ draw_exp_decay <- function(n,k)  {
 }
 
 
-#' fit bins
-#'
-#' fit an exponential distribution to binned data
-#'
-#' @param bins is the binned data to fit
-#' @return exponential fits for each bin, gof stats and CIs
-#' @export
-
-fit_bins <- function(bins)  {
-  fits <- list()
-  gofs <- list()
-  boots <- array(0, c(bins, 4))
-  for (i in seq_along(bins))  {
-    fits[[i]] <- fitdistrplus::fitdist(as.numeric(bins[[i]]))
-    gofs[[i]] <- fitdistrplus::gofstat(fits[[i]])
-    boots[i, 1] <- summary(fits[[i]])$estimate
-    boots[i, 2:4] <- fitdistrplus::bootdist(fits[[i]])$CI
-  }
-  return(list(boots, fits, gofs))
-}
 
 
 #' Find the PMF of values vector.
@@ -405,6 +373,27 @@ normalize <- function(probs)  {
     probs[i] <- probs[i] / tot
   }
   probs
+}
+
+
+#' percent_cdf
+#'
+#' computes the cdf of `vec` with respect to `by`
+#' coerces to length `ln`
+#'
+#' @param vec is a numeric vector
+#' @param by is a numeric vector of length `vec`
+#' @param ln is an integer
+#' @return a cdf length `ln ` of `vec` with respect to `by`
+#' @export
+percent_cdf <- function(vec, by = vec, ln = 100) {
+  vec <- to_cdf(normalize(vec), by = by)
+  n <- length(vec)
+  cdf <- vector(length = ln, mode = 'numeric')
+  for (i in 1:ln) {
+    cdf[i] <- length(vec[vec <= i/ln]) / n
+  }
+  return(cdf)
 }
 
 
@@ -492,6 +481,69 @@ rackb <- function(ls)  {
 }
 
 
+#' ragged_bin
+#'
+#' from indexes one to length `ln`
+#' return a list of index numbers length `bins`
+#' if `ln` is not equally divisible by `bins`
+#' the last bin is smaller
+#'
+#' @param ln is an integer specifying length
+#' @param bins is an integer specifying number of bins
+#' @return a list length `bins` of index numbers
+#' @export
+ragged_bin <- function(ln, bins = 10) {
+  if(length(ln) > 1) ln <- length(ln)
+  bin_len <- ceiling(ln / bins)
+  vec_ids <- 1:ln
+  bin_list <- list()
+  for (i in 1:bins)  {
+    if (i == 1)  {
+      bin_list[[i]] <- vec_ids[vec_ids <= bin_len]
+    }
+
+    if (i > 1)  {
+      bin_list[[i]] <- vec_ids[vec_ids > (i-1) * bin_len &
+                                 vec_ids <= i * bin_len]
+    }
+  }
+  return(bin_list)
+}
+
+
+#' ragged_bin_by
+#'
+#' divides range of `by` into `bins` intervals
+#' returns list length `bins`
+#' elements of list are index numbers of `vec`
+#' where values are in range of interval of `by`
+#'
+#' @param vec is a numeric vector of data
+#' @param by is a range of values to bin by
+#' @param bins is the number of bins to use
+#' @return a list length `bins` of index numbers of `vec` divided along `by`
+#' @export
+ragged_bin_by <- function(vec, by = vec, bins = 10) {
+  rng <- range(by)
+  ids <- 1:length(vec)
+  ls <- list()
+  rng <- rng[1] + ((0:bins / bins) * (rng[2] - rng[1] / bins))
+  for (i in 1:bins) {
+    if (i == 1) {
+      ls[[i]] <- ids[vec >= rng[i] & vec <= rng[i+1]]
+    }
+    if (i > 1 & i < bins) {
+      ls[[i]] <- ids[vec > rng[i] & vec <= rng[i+1]]
+    }
+    if (i == bins) {
+      ls[[i]] <- ids[vec > rng[i]]
+    }
+  }
+  return(list(ls, rng))
+}
+
+
+
 
 #' Rank List
 #'
@@ -537,14 +589,17 @@ sum_pmfs <- function(lis,len)  {
 #' to_cdf converts numeric pmf vector to cdf of equal length
 #'
 #' Given a numeric pmf, returns a numeric vector of the cdf.
+#' sorts pmf
 #'
 #' @param pmf is a numeric vector
 #' @return a numeric vector of the cdf
 #'
 #' @export
 
-to_cdf <- function(pmf)  {
+to_cdf <- function(pmf, by = pmf)  {
   cdf <- array(0,length(pmf))
+  if (sum(pmf) != 1) pmf <- normalize(pmf)
+  pmf <- pmf[order(by)]
   for (i in seq_along(pmf)) {
     if (i == 1) cdf[i] <- pmf[i]
     if (i >1 )  cdf[i] <- pmf[i] + cdf[i-1]
@@ -650,6 +705,27 @@ trunc_list <- function(pmfs, index)  {
 #' @export
 trunc_norm <- function(pmf, index)  {
   normalize(trunc_0(pmf, index))
+}
+
+
+
+#' val_by_cdf
+#'
+#' values at position of cdf of `val` with respect to `by`
+#'
+#' @param val is a numeric vector
+#' @param by is a numeric vector of length `val`
+#' @param ln is an integer
+#' @return values of `val` at cdf of `val` with respect to `by`
+#' @export
+val_by_cdf <- function(vals, by = vals, ln = 100) {
+  vals <- sort(vals)
+  vec <- to_cdf(normalize(vals), by = by)
+  val <- 0
+  for (i in 1:ln) {
+    val[i] <- max(vals[vec <= i/ln])
+  }
+  return(val)
 }
 
 

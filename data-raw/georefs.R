@@ -15,6 +15,7 @@ cd_vol <- fread('cedar.csv')
 hf_vol <- fread('hoffman_sedvol.csv')
 radio <- fread('radiocarbon.csv')
 cd_lng <- fread('cedar_long.csv')
+gr_vol <- read.csv('grc_vol.csv', skipNul = TRUE)
 
 # Miller/Burnett model output
 nodes <- readOGR('nodes_debrisflow.shp')
@@ -142,10 +143,17 @@ bear_valley_width <- interp_by_node(vals = bear_valley_width_raw,
                                  chan_out = bear_nodes$ToMouth_km,
                                  chan_id = bear_nodes$NODE_ID)
 
+bear_slope <- interp_by_node(vals = br_vol$local_avg_bed_slope,
+                                    trib_out = bear_trib_out,
+                                    trib_id = bear_ids,
+                                    chan_out = bear_nodes$ToMouth_km,
+                                    chan_id = bear_nodes$NODE_ID)
+
 bear <- bear_nodes
 bear$xsec_area <- bear_xsec_area
 bear$contr_area <- bear_contr_area
 bear$valley_width <- bear_valley_width
+bear$slope <- bear_slope
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(bear, overwrite = T)
@@ -210,11 +218,29 @@ rem_ids <- rem_ids[-1]
 
 cd_trc <- cd_lng[-rem_ids]
 
-ced_out <- hip_to_out(unlist(cd_trc[,2]), ced_tribs$lanc_hip,
+ced_out_lng <- hip_to_out(unlist(cd_trc[,2]), ced_tribs$lanc_hip,
                       ced_tribs$ToMouth_km * 1000, ced_tribs$out_hip)
 
-ced_ids <- snap_to_node(ced_out, ced_nodes$ToMouth_km * 1000, ced_nodes$NODE_ID)
+ced_ids_lng <- snap_to_node(ced_out_lng, ced_nodes$ToMouth_km * 1000, ced_nodes$NODE_ID)
 
+# local average bed slope m
+ced_bed <- cd_trc$chan_bed_elev_m
+ced_hip <- cd_trc$corr_hipchain_m
+ced_n <- length(ced_bed)
+ced_slp <- vector(length = ced_n, mode = 'numeric')
+for (i in seq_along(ced_bed)) {
+  if (i == 1) {
+    ced_slp[i] <- (ced_bed[i + 1] - ced_bed[i]) / (ced_hip[i + 1] - ced_hip[i])
+  }
+  if (i > 1 & i < ced_n) {
+    slp_a <- (ced_bed[i] - ced_bed[i - 1]) / (ced_hip[i] - ced_hip[i - 1])
+    slp_b <- (ced_bed[i + 1] - ced_bed[i]) / (ced_hip[i + 1] - ced_hip[i])
+    ced_slp[i] <- (slp_a + slp_b) / 2
+  }
+  if (i == ced_n) {
+    ced_slp[i] <- (ced_bed[i] - ced_bed[i - 1]) / (ced_hip[i] - ced_hip[i - 1])
+  }
+}
 
 ced_out <- hip_to_out(unlist(cd_vol[,2]), ced_tribs$lanc_hip,
                       ced_tribs$ToMouth_km * 1000, ced_tribs$out_hip)
@@ -245,10 +271,17 @@ ced_valley_width <- interp_by_node(vals = ced_valley_raw,
                                     chan_out = ced_nodes$ToMouth_km,
                                     chan_id = ced_nodes$NODE_ID)
 
+ced_slope <- interp_by_node(vals = ced_slp,
+                            trib_out = ced_trib_out,
+                            trib_id = ced_ids,
+                            chan_out = ced_nodes$ToMouth_km,
+                            chan_id = ced_nodes$NODE_ID)
+
 cedar <- ced_nodes
 cedar$xsec_area <- ced_xsec_area
 cedar$contr_area <- ced_contr_area
 cedar$valley_width <- ced_valley_width
+cedar$slope <- ced_slope
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(cedar, overwrite = T)
@@ -326,10 +359,19 @@ hoff_valley_width <- interp_by_node(vals = hoff_valley_raw,
                                     chan_out = hoff_nodes$ToMouth_km,
                                     chan_id = hoff_nodes$NODE_ID)
 
+# local average bed slope
+hoff_slp <- interp_by_node(vals = hf_vol$reach_slope,
+                          trib_out = hoff_trib_out,
+                          trib_id = hoff_ids,
+                          chan_out = hoff_nodes$ToMouth_km,
+                          chan_id = hoff_nodes$NODE_ID)
+
+
 hoffman <- hoff_nodes
 hoffman$xsec_area <- hoff_xsec_area
 hoffman$contr_area <- hoff_contr_area
 hoffman$valley_width <- hoff_valley_width
+hoffman$slope <- hoff_slp
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(hoffman, overwrite = T)
@@ -369,6 +411,16 @@ knowles_out <- hip_to_out(kn_vol$corrected_hipchain, landmarks$hip,
                        knowles_tribs$ToMouth_km * 1000, landmarks$outhip)
 
 knowles_ids <- snap_to_node(knowles_out, knowles_nodes$ToMouth_km * 1000, knowles_nodes$NODE_ID)
+knowles_ids[97] <- knowles_ids[97] + 1
+
+kn_trib_out <- nodes$ToMouth_km[nodes$NODE_ID %in% knowles_ids]
+
+kn_sub <- transects[,-c(11:13)]
+kn_sub$slope <- interp_by_node(vals = kn_vol$local_slope,
+                               trib_out = kn_trib_out,
+                               trib_id = knowles_ids,
+                               chan_out = kn_sub$ToMouth_km,
+                               chan_id = kn_sub$NODE_ID)
 
 
 # combine transect data for all creeks
@@ -376,8 +428,8 @@ knowles_ids <- snap_to_node(knowles_out, knowles_nodes$ToMouth_km * 1000, knowle
 bear$creek_name <- 'bear'
 cedar$creek_name <- 'cedar'
 hoffman$creek_name <- 'hoffman'
-transects$creek_name <- 'knowles'
-kn_sub <- transects[,-c(11:13)]
+kn_sub$creek_name <- 'knowles'
+
 names(kn_sub) <- names(bear)
 kn_sub$contr_area <- kn_sub$contr_area * 1000000 # convert km2 to m2
 creeks <- rbind(bear, rbind(cedar, rbind(hoffman, kn_sub)))

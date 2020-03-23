@@ -1,3 +1,32 @@
+#'  avg slope
+#'
+#'  naive average slope function
+#'
+#'  @param el is a vector of elevations
+#'  @param hip is a vector of hipchain lengths (distance to outlet)
+#'  @return local average bed slope
+#'  @export
+
+avg_slope <- function(el, hip) {
+  n <- length(el)
+  slp <- vector(length = n, mode = 'numeric')
+  for (i in seq_along(el)) {
+    if (i == 1) {
+      slp[i] <- (el[i + 1] - el[i]) / (hip[i + 1] - hip[i])
+    }
+    if (i > 1 & i < n) {
+      slp_a <- (el[i] - el[i - 1]) / (hip[i] - hip[i - 1])
+      slp_b <- (el[i + 1] - el[i]) / (hip[i + 1] - hip[i])
+      slp[i] <- (slp_a + slp_b) / 2
+    }
+    if (i == n) {
+      slp[i] <- (el[i] - el[i - 1]) / (hip[i] - hip[i - 1])
+    }
+  }
+}
+
+
+
 
 #'  birdseye
 #'
