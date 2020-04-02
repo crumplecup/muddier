@@ -321,103 +321,6 @@ save(rip_5band, file = 'rip_5band.rds')
 rm(rip_4band, dat_ar, ndvi, rip_ar)
 gc()
 
-
-load('rip_5band.rds')
-
-dat_ar <- rip_5band[[1]]
-dat_labs <- rip_5band[[2]]
-lab_ar <- to_categorical(dat_labs)
-dat_n <- length(dat_labs)
-qtr_n <- ceiling(dat_n / 4)
-test_ids <- 1:qtr_n
-val_ids <- (qtr_n + 1):(2 * qtr_n)
-train_ids <- (2 * qtr_n + 1):dat_n
-batch_n <- 20
-train_steps <- floor(length(train_ids) / batch_n)
-test_steps <- floor(length(test_ids) / batch_n)
-valid_steps <- floor(length(val_ids) / batch_n)
-
-
-datagen <- image_data_generator(rescale = 1/255)
-
-auggen <- image_data_generator(
-  rescale = 1/255,
-  rotation_range = 40,
-  width_shift_range = 0.2,
-  height_shift_range = 0.2,
-  shear_range = 0.2,
-  zoom_range = 0.2,
-  horizontal_flip = TRUE,
-  fill_mode = 'nearest'
-)
-
-
-train_gen <- flow_images_from_data(
-  dat_ar[train_ids,,,],
-  lab_ar[train_ids,],
-  auggen,
-  20)
-
-valid_gen <- flow_images_from_data(
-  dat_ar[val_ids,,,],
-  lab_ar[val_ids,],
-  datagen,
-  20)
-
-
-
-# batch <- generator_next(valid_gen)
-
-model <- keras_model_sequential() %>%
-  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
-                input_shape = c(70, 71, 5)) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 128, kernel_size = c(3, 3), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 128, kernel_size = c(3, 3), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_flatten() %>%
-  layer_dropout(rate = 0.5) %>%
-  layer_dense(units = 512, activation = "relu") %>%
-  layer_dense(units = 64, activation = "relu") %>%
-  layer_dense(units = 3, activation = "softmax")
-
-
-mod1 <- keras_model_sequential() %>%
-  layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
-                input_shape = c(150, 150, 3)) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>%
-  layer_flatten() %>%
-  layer_dense(units = 64, activation = "relu") %>%
-  layer_dense(units = 3, activation = "softmax")
-
-model <- mod1
-summary(model)
-
-model %>% compile(
-  loss = "categorical_crossentropy",
-  optimizer = 'adam',
-  metrics = c("acc")
-)
-
-begin <- Sys.time()
-history <- model %>% fit_generator(
-  train_gen,
-  steps_per_epoch = train_steps,
-  epochs = 50,
-  validation_data = valid_gen,
-  validation_steps = valid_steps
-)
-end <- Sys.time()
-end - begin
-
-
-model %>% save_model_hdf5('rip_mod5_aug50.h5')
 model %>% save_model_hdf5('rip_mod4_aug1000.h5')
 
 model %>% save_model_hdf5('rip_mod4_aug200.h5')
@@ -428,13 +331,6 @@ model %>% save_model_hdf5('rip_mod_aug10.h5')
 rm(train_gen, valid_gen)
 gc()
 
-test_gen <- flow_images_from_data(
-  dat_ar[test_ids,,,],
-  lab_ar[test_ids,],
-  datagen,
-  20)
-
-model %>% evaluate_generator(test_gen, steps = test_steps)
 
 
 model <- load_model_hdf5('/home/crumplecup/work/rip_mod4_aug200.h5')
@@ -778,57 +674,6 @@ get_data(train_dir) %>%
   reticulate::iter_next()
 
 
-# keras model
-
-setwd(work_dir)
-load('rip_5band.rds')
-
-dat_ar <- rip_5band[[1]]
-dat_labs <- rip_5band[[2]]
-lab_ar <- to_categorical(dat_labs)
-dat_n <- length(dat_labs)
-qtr_n <- ceiling(dat_n / 4)
-test_ids <- 1:qtr_n
-val_ids <- (qtr_n + 1):(2 * qtr_n)
-train_ids <- (2 * qtr_n + 1):dat_n
-batch_n <- 20
-train_steps <- floor(length(train_ids) / batch_n)
-test_steps <- floor(length(test_ids) / batch_n)
-valid_steps <- floor(length(val_ids) / batch_n)
-
-input_tensor <- layer_input(shape = c(70, 71, 5))
-output_tensor <- input_tensor %>%
-  layer_conv_2d(filters = 32, kernel_size = c(7, 7), activation = "relu",
-                input_shape = c(70, 71, 5)) %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 64, kernel_size = c(7, 7), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 128, kernel_size = c(7, 7), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_flatten() %>%
-  layer_dropout(rate = 0.5) %>%
-  layer_dense(units = 512, activation = "relu") %>%
-  layer_dense(units = 64, activation = "relu") %>%
-  layer_dense(units = 3, activation = "softmax")
-
-model <- keras_model(input_tensor, output_tensor)
-summary(model)
-
-model %>%
-  compile(
-    loss = "categorical_crossentropy",
-    optimizer = "adam",
-    metrics = "accuracy"
-  )
-
-
-model %>% fit(dat_ar[train_ids,,,], lab_ar[train_ids,],
-              epochs = 50, batch_size = 128)
-
-model %>% evaluate(dat_ar[test_ids,,,], lab_ar[test_ids,])
-
-model %>% save_model_hdf5('keras_mod5_aug50.h5')
-
 conv_base <- application_vgg16(
   weights = 'imagenet',
   include_top = FALSE,
@@ -869,7 +714,7 @@ setwd('/home/crumplecup/work/muddier')
 usethis::use_data(conv_mod, overwrite = T)
 
 ras_dir <- '/media/crumplecup/BentonCo/Statewide2018_Prelim/JustBenton'
-mod_path <- '/home/crumplecup/work/keras_mod5_aug50.h5'
+mod_path <- '/home/crumplecup/work/rip_mod5_aug20.h5'
 out_dir <- ('/home/crumplecup/work')
 
 data(samples, package = 'riparian')
@@ -938,8 +783,8 @@ for (j in 1:50)  {
   car <- color_array(r)
   prd <- predict(rip_lmod, newdata = car)
 
-  obs <- plot_samples(ras_dir, slc_path, sam[c(1,3,5:11,13:18), ],
-                      method = 'lm', mod_path)
+  obs <- plot_samples(ras_dir, slc_path, sam[c(1,3,5:14,16:18), ],
+                      method = 'binom', mod_path)
   obs
 
 
