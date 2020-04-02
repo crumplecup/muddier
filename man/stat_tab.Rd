@@ -4,16 +4,17 @@
 \alias{stat_tab}
 \title{stat_tab}
 \usage{
-stat_tab(mods, type = "lm")
+stat_tab(df, type = "lm")
 }
 \arguments{
-\item{mods}{is a list of data.frames to fit using lm}
+\item{df}{is a data.frame object}
 }
 \value{
-table of lm statistics from `mods`
+table of lm statistics from `df`
 }
 \description{
-print table of lm statistics from a list of data.frames
-in each df, first var is dependent, other vars independent
-stats include adj.r.squared, AIC and BIC
+in `df`, first var is dependent, other vars independent
+gets all formula combinations
+returns a table of model stats
+adj.r.squared, AIC and BIC
 }

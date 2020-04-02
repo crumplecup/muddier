@@ -280,50 +280,6 @@ get_forms <- function(df) {
 }
 
 
-#' get_palette
-#'
-#' get a palette of colors at chosen transparency
-#' colors are coral, hardwood, gold, forest, sky, ocean
-#' violet, rose, crimson
-#' choose a palette with a vector of names
-#' get a random palette length `x` if `x` is a number
-#'
-#' @param x is a vector of color names or number
-#' @param a is the alpha transparency (0,1)
-#' @return a palette of rgb values
-#' @export
-
-get_palette <- function(x, a = .33) {
-  col_names <- c('coral', 'hardwood', 'gold', 'forest', 'leaf', 'sky', 'ocean',
-            'violet', 'rose', 'crimson', 'white', 'slate', 'charcoal', 'black')
-  cols <- c(rgb(.921, .251, .203, a, 'coral'),
-            rgb(.321, .196, .129, a, 'hardwood'),
-            rgb(.812, .675, .0, a, 'gold'),
-            rgb(.0, .361, .024, a, 'forest'),
-            rgb(.561, .82, .459, a, 'leaf'),
-            rgb(.0, .753, .78, a, 'sky'),
-            rgb(.02, .0, .612, a, 'ocean'),
-            rgb(.608, .0, .89, a, 'violet'),
-            rgb(.839, .369, .471, a, 'rose'),
-            rgb(.788, .0, .0, a, 'crimson'),
-            rgb(1, 1, 1, a, 'white'),
-            rgb(.666, .666, .666, a, 'slate'),
-            rgb(.333, .333, .333, a, 'charcoal'),
-            rgb(0, 0, 0, a, 'black'))
-  df <- data.frame(col_names = col_names, cols = cols,
-                   stringsAsFactors = F)
-  palette <- 0
-  if (inherits(x, 'character')) {
-    for (i in seq_along(x)) {
-      palette[i] <- df$cols[df$col_names == x[i]]
-    }
-  }
-  if (inherits(x, 'numeric')) {
-    palette <- df$cols[sample.int(length(cols), x, replace = TRUE)]
-  }
-  return(palette)
-}
-
 
 #' gof_tab
 #'

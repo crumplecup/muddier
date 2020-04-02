@@ -43,7 +43,7 @@ for (i in seq_along(files)) {
   ls[[i]] <- ar
 }
 
-car <- array(0, c(length(ls), 12))
+car <- array(0, c(length(ls), 15))
 for (i in 1:length(ls)) {
   mat <- ls[[i]]
   car[i, 1] <- mean(mat[ , 1])
@@ -58,6 +58,11 @@ for (i in 1:length(ls)) {
   car[i, 10] <- mean(mat[ , 4])
   car[i, 11] <- sd(mat[ , 4])
   car[i, 12] <- sum(mat[ , 4])
+  ndvi <- (mat[ , 4] - mat[ , 1]) / (mat[ , 4] + mat[ , 1])
+  car[i, 13] <- mean(ndvi)
+  car[i, 14] <- sd(ndvi)
+  car[i, 15] <- sum(ndvi)
+
 }
 
 # create labels from filenames
@@ -77,7 +82,10 @@ df <- data.frame(cov = labs,
                  blu_sm = car[ , 9],
                  nir_mn = car[ , 10],
                  nir_sd = car[ , 11],
-                 nir_sm = car[ , 12]
+                 nir_sm = car[ , 12],
+                 ndv_mn = car[ , 13],
+                 ndv_sd = car[ , 14],
+                 ndv_sm = car[ , 15]
                  )
 
 setwd(work_dir)
@@ -87,9 +95,7 @@ df$cov1 <- df$cov
 df$cov1[df$cov == 2] <- 1
 
 dt <- df
-dt[, 1] <- df$cov1
-dt <- dt[ , -1]
-dt <- dt[ , c(13, 1:12)]
+dt <- dt[ , c(17, 2:16)]
 
 
 begin <- Sys.time()
@@ -97,15 +103,48 @@ mods <- stat_tab(dt, type = 'binom')
 end <- Sys.time()
 end - begin
 
+bin1 <- mods[rev(order(mods$R2)),]
+rip_bin1 <- lm(as.character(bin1[1,1]), data = dt)
 
+dt <- df
+dt <- dt[ , -17]
+dt <- dt[dt$cov > 0, ]
+dt$cov <- dt$cov - 1
 
+begin <- Sys.time()
+mods <- stat_tab(dt, type = 'binom')
+end <- Sys.time()
+end - begin
 
-img <- raster::stack(file.path(in_dir, files[1]))
-raster::plotRGB(img)
-red <- raster::raster(img, layer = 1)
-vals <- raster::values(red)
-mat <- matrix(vals, ncol = ncol(red), byrow = T)
-mat
+bin2 <- mods[rev(order(mods$R2)),]
+rip_bin2 <- lm(as.character(bin2[1,1]), data = dt)
+
+dt <- df
+dt <- dt[ , -17]
+
+begin <- Sys.time()
+mods <- stat_tab(dt)
+end <- Sys.time()
+end - begin
+
+lmod <- mods[rev(order(mods$R2)),]
+save(bin1, file = 'rip_bin1.rds')
+save(bin2, file = 'rip_bin2.rds')
+save(lmod, file = 'rip_lmod.rds')
+
+labs <- vector(length(files), mode = 'numeric')
+labs[grep('pc', files)] <- 1
+labs[grep('fc', files)] <- 2
+
+load('rip_4band_df.rds')
+load('rip_bin1.rds')
+load('rip_bin2.rds')
+rip_lmod <- lm(as.character(lmod[1,1]), data = df)
+
+setwd('/home/crumplecup/work/muddier')
+usethis::use_data(rip_lmod)
+usethis::use_data(rip_bin1)
+usethis::use_data(rip_bin2)
 
 
 img_to_array <- function(files, in_path)  {
@@ -137,7 +176,9 @@ end <- Sys.time()
 end - begin
 
 save(rip_4band, file = 'rip_4band.rds')
-
+load('rip_4band.rds')
+rip_4band <- list(rip_4band, labs)
+save(rip_4band, file = 'rip_4band.rds')
 
 base_dir <- '/home/crumplecup/work/ml'
 dir.create(base_dir)
@@ -267,12 +308,24 @@ load('rip_3band.rds')
 rip_3band[[2]] <- labs
 save(rip_3band, file = 'rip_3band.rds')
 
+# add ndvi layer to rip_4band
+
+ndvi <- (dat_ar[,,,4] - dat_ar[,,,1]) / (dat_ar[,,,4] + dat_ar[,,,1])
+
+rip_ar <- array(0, c(dim(dat_ar)[-4], 5))
+rip_ar[,,,1:4] <- dat_ar
+rip_ar[,,,5] <- ndvi
+
+rip_5band <- list(rip_ar, dat_labs)
+save(rip_5band, file = 'rip_5band.rds')
+rm(rip_4band, dat_ar, ndvi, rip_ar)
+gc()
 
 
+load('rip_5band.rds')
 
-
-dat_ar <- rip_3band[[1]]
-dat_labs <- rip_3band[[2]]
+dat_ar <- rip_5band[[1]]
+dat_labs <- rip_5band[[2]]
 lab_ar <- to_categorical(dat_labs)
 dat_n <- length(dat_labs)
 qtr_n <- ceiling(dat_n / 4)
@@ -317,7 +370,7 @@ valid_gen <- flow_images_from_data(
 
 model <- keras_model_sequential() %>%
   layer_conv_2d(filters = 32, kernel_size = c(3, 3), activation = "relu",
-                input_shape = c(150, 150, 3)) %>%
+                input_shape = c(70, 71, 5)) %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_conv_2d(filters = 64, kernel_size = c(3, 3), activation = "relu") %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
@@ -342,9 +395,9 @@ mod1 <- keras_model_sequential() %>%
   layer_flatten() %>%
   layer_dense(units = 64, activation = "relu") %>%
   layer_dense(units = 3, activation = "softmax")
-summary(mod1)
 
 model <- mod1
+summary(model)
 
 model %>% compile(
   loss = "categorical_crossentropy",
@@ -356,7 +409,7 @@ begin <- Sys.time()
 history <- model %>% fit_generator(
   train_gen,
   steps_per_epoch = train_steps,
-  epochs = 40,
+  epochs = 50,
   validation_data = valid_gen,
   validation_steps = valid_steps
 )
@@ -364,6 +417,11 @@ end <- Sys.time()
 end - begin
 
 
+model %>% save_model_hdf5('rip_mod5_aug50.h5')
+model %>% save_model_hdf5('rip_mod4_aug1000.h5')
+
+model %>% save_model_hdf5('rip_mod4_aug200.h5')
+model %>% save_model_hdf5('rip_mod4_aug40.h5')
 model %>% save_model_hdf5('rip_mod_aug40.h5')
 model %>% save_model_hdf5('rip_mod_aug10.h5')
 
@@ -379,10 +437,7 @@ test_gen <- flow_images_from_data(
 model %>% evaluate_generator(test_gen, steps = test_steps)
 
 
-
-
-
-model <- load_model_hdf5('/home/crumplecup/work/rip_mod_aug10.h5')
+model <- load_model_hdf5('/home/crumplecup/work/rip_mod4_aug200.h5')
 model
 
 img_path <- file.path('/home/crumplecup/work/png3band/')
@@ -443,6 +498,7 @@ model <- application_vgg16(
   include_top = FALSE
 )
 layer_name <- "block3_conv1"
+layer_name <- 'conv2d_17'
 filter_index <- 1
 layer_output <- get_layer(model, layer_name)$output
 loss <- k_mean(layer_output[,,,filter_index])
@@ -725,10 +781,10 @@ get_data(train_dir) %>%
 # keras model
 
 setwd(work_dir)
-load('rip_3band.rds')
+load('rip_5band.rds')
 
-dat_ar <- rip_3band[[1]]
-dat_labs <- rip_3band[[2]]
+dat_ar <- rip_5band[[1]]
+dat_labs <- rip_5band[[2]]
 lab_ar <- to_categorical(dat_labs)
 dat_n <- length(dat_labs)
 qtr_n <- ceiling(dat_n / 4)
@@ -740,14 +796,12 @@ train_steps <- floor(length(train_ids) / batch_n)
 test_steps <- floor(length(test_ids) / batch_n)
 valid_steps <- floor(length(val_ids) / batch_n)
 
-input_tensor <- layer_input(shape = c(150, 150, 3))
+input_tensor <- layer_input(shape = c(70, 71, 5))
 output_tensor <- input_tensor %>%
   layer_conv_2d(filters = 32, kernel_size = c(7, 7), activation = "relu",
-                input_shape = c(244, 244, 3)) %>%
+                input_shape = c(70, 71, 5)) %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_conv_2d(filters = 64, kernel_size = c(7, 7), activation = "relu") %>%
-  layer_max_pooling_2d(pool_size = c(2, 2)) %>%
-  layer_conv_2d(filters = 128, kernel_size = c(7, 7), activation = "relu") %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
   layer_conv_2d(filters = 128, kernel_size = c(7, 7), activation = "relu") %>%
   layer_max_pooling_2d(pool_size = c(2, 2)) %>%
@@ -768,8 +822,125 @@ model %>%
   )
 
 
-model %>% fit(dat_ar[1:200,,,], lab_ar[1:200,],
-              epochs = 40, batch_size = 128)
+model %>% fit(dat_ar[train_ids,,,], lab_ar[train_ids,],
+              epochs = 50, batch_size = 128)
+
+model %>% evaluate(dat_ar[test_ids,,,], lab_ar[test_ids,])
+
+model %>% save_model_hdf5('keras_mod5_aug50.h5')
+
+conv_base <- application_vgg16(
+  weights = 'imagenet',
+  include_top = FALSE,
+  input_shape = c(70, 71, 3)
+)
+conv_base
+
+feats <- conv_base %>% predict(dat_ar[,,,1:3])
+flat <- array_reshape(feats, dim = c(nrow(feats),
+                                     Reduce('*', dim(feats)[-1])))
+
+input_tensor <- layer_input(shape = dim(feats)[-1])
+output_tensor <- input_tensor %>%
+  layer_flatten() %>%
+  layer_dense(units = 256, activation = 'relu') %>%
+  layer_dropout(rate = 0.5) %>%
+  layer_dense(units = 3, activation = "softmax")
+
+model <- keras_model(input_tensor, output_tensor)
+
+model %>%
+  compile(
+    loss = "categorical_crossentropy",
+    optimizer = "adam",
+    metrics = "accuracy"
+  )
+
+model %>% fit(feats[c(train_ids, val_ids),,,], lab_ar[c(train_ids, val_ids),],
+              epochs = 10, batch_size = 128)
+model %>% evaluate(feats[test_ids,,,], lab_ar[test_ids,])
+model %>% save_model_hdf5('vvg_mod3_aug25.h5')
+
+
+
+setwd('/home/crumplecup/work')
+conv_mod <- load_model_hdf5('vvg_mod3_aug25.h5')
+setwd('/home/crumplecup/work/muddier')
+usethis::use_data(conv_mod, overwrite = T)
+
+ras_dir <- '/media/crumplecup/BentonCo/Statewide2018_Prelim/JustBenton'
+mod_path <- '/home/crumplecup/work/keras_mod5_aug50.h5'
+out_dir <- ('/home/crumplecup/work')
+
+data(samples, package = 'riparian')
+data(prc_strms, package = 'riparian')
+data(prc_mtls, package = 'riparian')
+data(prc_per, package = 'riparian')
+data(per_buff, package = 'riparian')
+
+sam <- riparian::sample_streams(20)
+sp::plot(sam[12,])
+
+sm <- sam[c(1,3,5:12), ]
+
+profvis::profvis(obs <- plot_samples(ras_dir, out_dir, sm[1:2, ], mod_path))
+obs
+
+setwd(out_dir)
+load('sam.rds')
+slc_path <- file.path(out_dir, 'slices')
+thmb_path <- file.path(out_dir, 'thumbnails')
+dir.create(slc_path)
+dir.create(thmb_path)
+
+# from dir of rasters, make thumbnails of sample areas and save to drive
+Rprof()
+thumbnails(ras_dir, thmb_path, polys = sam)
+Rprof(NULL)
+
+report <- summaryRprof()
+report$by.self
+
+data(samples, package = 'riparian')
+obs <- plot_samples(ras_dir, slc_path, samples[1:3, ], mod_path)
+obs
+
+files <- get_ras(thmb_path)
+model <- keras::load_model_hdf5(mod_path)
+r <- raster::stack(file.path(thmb_path, files[1]))
+crs_ref <- raster::crs(r)
+polys <- sam
+polys <- sp::spTransform(polys, crs_ref)
+raster::plotRGB(r)
+area <- lapply(methods::slot(polys[1,], 'polygons'),
+               function(x) lapply(methods::slot(x, 'Polygons'),
+                                  function(y) methods::slot(y, 'coords')))
+area <- area[[1]]
+
+for (j in 1:50)  {
+  box <- riparian::spatialize(area[1], crs_ref)
+  frm <- raster::extent(box)
+  slc <- raster::mask(r, box)
+  slc <- raster::crop(slc, frm)
+
+  ar <- array(255, c(1, 70, 71, 5))
+  for (k in 1:4) {
+    ras <- raster::raster(slc, layer = k)
+    mat <- matrix(raster::values(ras), ncol = ncol(ras), byrow = TRUE)
+    ar[1, 1:nrow(mat), 1:ncol(mat), k] <- mat
+  }
+  ar[is.na(ar)] <- 255
+  ar[1,,,5] <- (ar[1,,,1] - ar[1,,,4]) / (ar[1,,,1] + ar[1,,,4])
+  ar[1,,,] <- ar[1,,,] / 255
+
+  pred <- predict(model, ar)
+
+  car <- color_array(r)
+  prd <- predict(rip_lmod, newdata = car)
+
+  obs <- plot_samples(ras_dir, slc_path, sam[c(1,3,5:11,13:18), ],
+                      method = 'lm', mod_path)
+  obs
 
 
 
