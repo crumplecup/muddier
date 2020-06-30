@@ -15,5 +15,7 @@ convo_list(ranks, pmfs = char_pmfs)
 convolved pmfs by subtraction
 }
 \description{
-convolves pmfs by rank list
+convolves pmfs by rank list.
+added 50 years to index because sample age is set to 1950
+but goes to 2000.
 }

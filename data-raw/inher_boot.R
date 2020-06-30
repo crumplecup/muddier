@@ -435,14 +435,17 @@ lines(index, ff_cis[1,], lty = 2)
 lines(index, ff_cis[2,], lty = 3, col = 'slateblue')
 
 data(ff_cdf, package = 'muddier')
-load('ff_cdfs_cis.rda')
-png('ff_cdfs_cis.png', height = 4, width = 6, units = 'in', res = 300)
-plot(index, ff_cdfs_cis[3,], xlim = c(0,10000), lty=2, type = 'l',
+data('ff_cdfs_cis', package = 'muddier')
+pal <- get_palette(c('coral', 'ocean', 'charcoal'), .7)
+png('ff_cdfs_cis.png', height = 6, width = 6, units = 'in', res = 300)
+plot(index, ff_cdfs_cis[3,], xlim = c(0,3500), lty=2, type = 'l', lwd = 2,
   main = 'fluvial fines inherited age cdf',
-  xlab = 'inherited age', ylab = 'probability age <= x')
-lines(index, ff_cdfs_cis[1,], lty = 2)
-lines(index, ff_cdf)
-lines(index, ff_cdfs_cis[2,], lty = 2, col = 'slateblue')
+  xlab = 'inherited age', ylab = 'probability age <= x', col = pal[3])
+lines(index, ff_cdfs_cis[1,], lty = 2, lwd = 2, col = pal[3])
+lines(index, ff_cdf, lwd = 2, col = pal[1])
+lines(index, ff_cdfs_cis[2,], lty = 2, col = pal[2], lwd = 2)
+legend('bottomright', legend = c('observed', 'median', '95% CIs'),
+       fill = pal)
 dev.off()
 
 data(ff_exc, package = 'muddier')
@@ -664,15 +667,16 @@ microbenchmark::microbenchmark(
 # con2 20.27604 22.14754 22.44325 22.89713 23.09889 23.84933    10
 # con3 20.74371 21.61118 22.59161 23.00127 23.44725 24.32304    10
 
-setwd('/home/crumplecup/work/')
+boot_dir <- '/home/crumplecup/work/boot/'
+setwd(boot_dir)
 
-data(df_bl, package = 'muddier')
 begin <- Sys.time()
 df_c1 <- convo_list(df_bl[[1]])
 end <- Sys.time()
 end - begin  # Time difference of 43.02693 mins
 save(df_c1, file = 'df_c1.rda')
 rm(df_c1)
+gc()
 
 begin <- Sys.time()
 df_c2 <- convo_list(df_bl[[2]])
@@ -680,6 +684,7 @@ end <- Sys.time()
 end - begin  # Time difference of 49.74569 mins
 save(df_c2, file = 'df_c2.rda')
 rm(df_c2)
+gc()
 
 begin <- Sys.time()
 df_c3 <- convo_list(df_bl[[3]])
@@ -687,6 +692,7 @@ end <- Sys.time()
 end - begin  # Time difference of 37.76244 mins
 save(df_c3, file = 'df_c3.rda')
 rm(df_c3)
+gc()
 
 begin <- Sys.time()
 df_c4 <- convo_list(df_bl[[4]])
@@ -694,6 +700,7 @@ end <- Sys.time()
 end - begin  # Time difference of 44.56297 mins
 save(df_c4, file = 'df_c4.rda')
 rm(df_c4)
+gc()
 
 begin <- Sys.time()
 df_c5 <- convo_list(df_bl[[5]])
@@ -701,6 +708,7 @@ end <- Sys.time()
 end - begin  # Time difference of 34.94688 mins
 save(df_c5, file = 'df_c5.rda')
 rm(df_c5)
+gc()
 
 begin <- Sys.time()
 df_c6 <- convo_list(df_bl[[6]])
@@ -708,15 +716,15 @@ end <- Sys.time()
 end - begin  # Time difference of 44.63116 mins
 save(df_c6, file = 'df_c6.rda')
 rm(df_c6)
+gc()
 
 begin <- Sys.time()
 df_c7 <- convo_list(df_bl[[7]])
 end <- Sys.time()
 end - begin  # Time difference of 43.02693 mins
 save(df_c7, file = 'df_c7.rda')
-rm(df_c7)
-
-rm(df_bl)
+rm(df_c7, df_bl)
+gc()
 
 load('df_c1.rda')
 index <- sort(as.numeric(rownames(char_pmfs)))
@@ -726,6 +734,7 @@ end <- Sys.time()
 end - begin  # Time difference of 27.79817 mins
 save(df_t1, file = 'df_t1.rda')
 rm(df_c1, df_t1)
+gc()
 
 load('df_c2.rda')
 begin <- Sys.time()
@@ -734,6 +743,7 @@ end <- Sys.time()
 end - begin  # Time difference of 29.99942 mins
 save(df_t2, file = 'df_t2.rda')
 rm(df_c2, df_t2)
+gc()
 
 load('df_c3.rda')
 begin <- Sys.time()
@@ -742,6 +752,7 @@ end <- Sys.time()
 end - begin  # Time difference of 18.27289 mins
 save(df_t3, file = 'df_t3.rda')
 rm(df_c3, df_t3)
+gc()
 
 load('df_c4.rda')
 begin <- Sys.time()
@@ -750,6 +761,7 @@ end <- Sys.time()
 end - begin  # Time difference of 31.00294 mins
 save(df_t4, file = 'df_t4.rda')
 rm(df_c4, df_t4)
+gc()
 
 load('df_c5.rda')
 begin <- Sys.time()
@@ -758,6 +770,7 @@ end <- Sys.time()
 end - begin  # Time difference of 27.82506 mins
 save(df_t5, file = 'df_t5.rda')
 rm(df_c5, df_t5)
+gc()
 
 load('df_c6.rda')
 begin <- Sys.time()
@@ -766,6 +779,7 @@ end <- Sys.time()
 end - begin  # Time difference of 31.02878 mins
 save(df_t6, file = 'df_t6.rda')
 rm(df_c6, df_t6)
+gc()
 
 load('df_c7.rda')
 begin <- Sys.time()
@@ -774,168 +788,183 @@ end <- Sys.time()
 end - begin  # Time difference of 25.12493 mins
 save(df_t7, file = 'df_t7.rda')
 rm(df_c7, df_t7)
-
-load('df_t1.rda')
-load('df_t2.rda')
-load('df_t3.rda')
-load('df_t4.rda')
-
-df_ta <- cbind(df_t1, cbind(df_t2, cbind(df_t3, df_t4)))
-save(df_ta, file = 'df_ta.rda')
-
-rm(df_t1, df_t2, df_t3, df_t4, df_ta)
-
-load('df_t5.rda')
-load('df_t6.rda')
-load('df_t7.rda')
-df_tb <- cbind(df_t5, cbind(df_t6, df_t7))
-save(df_tb, file = 'df_tb.rda')
-rm(df_t5, df_t6, df_t7)
+gc()
 
 
-df_ta <- lapply(df_t1, rack) %>% rack
-save(df_ta, file = 'df_ta.rda', overwrite = T)
-df_t2 <- df_t2 %>% rack
-df_t3 <- df_t3 %>% rack
-df_t4 <- df_t4 %>% rack
-df_t5 <- df_t5 %>% rack
-df_t6 <- df_t6 %>% rack
-df_t7 <- df_t7 %>% rack
-
-save(df_t1, file = 'dt_t1.rda', overwrite = T)
-rm(df_t1)
-save(df_t2, file = 'dt_t2.rda', overwrite = T)
-rm(df_t2)
-save(df_t3, file = 'dt_t3.rda', overwrite = T)
-rm(df_t3)
-save(df_t4, file = 'dt_t4.rda', overwrite = T)
-rm(df_t4)
-save(df_t5, file = 'dt_t5.rda', overwrite = T)
-rm(df_t5)
-save(df_t6, file = 'dt_t6.rda', overwrite = T)
-rm(df_t6)
-save(df_t7, file = 'dt_t7.rda', overwrite = T)
-rm(df_t7)
-
-setwd('/home/crumplecup/work/')
+setwd('/home/crumplecup/work/boot/')
 library(muddier)
 load('df_t1.rda')
-index <- sort(as.numeric(rownames(char_pmfs)))
 df_t1 <- rackl(df_t1)
 df_t1_cdf <- apply(df_t1, 2, to_cdf)
 save(df_t1_cdf, file = 'df_t1_cdf.rda')
+rm(df_t1_cdf)
+gc()
 
 load('df_t2.rda')
 df_t2 <- rackl(df_t2)
 df_t2_cdf <- apply(df_t2, 2, to_cdf)
 save(df_t2_cdf, file = 'df_t2_cdf.rda')
+rm(df_t2_cdf)
+gc()
 
 df_t1 <- cbind(df_t1, df_t2)
 df_m1 <- df_t1
 save(df_m1, file = 'df_m1.rda')
+rm(df_m1, df_t1, df_t2)
+gc()
 
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
 load('df_t1_cdf.rda')
 load('df_t2_cdf.rda')
 df_t1_cdf <- cbind(df_t1_cdf, df_t2_cdf)
 df_m1_cdf <- df_t1_cdf
 save(df_m1_cdf, file = 'df_m1_cdf.rda')
+rm(df_t1_cdf, df_t2_cdf, df_m1_cdf)
+gc()
 
 
-
-setwd('/home/crumplecup/work/')
+setwd('/home/crumplecup/work/boot')
 library(muddier)
 load('df_t3.rda')
 df_t3 <- rackl(df_t3)
 df_t3_cdf <- apply(df_t3, 2, to_cdf)
 save(df_t3_cdf, file = 'df_t3_cdf.rda')
+rm(df_t3_cdf)
+gc()
 
 load('df_t4.rda')
 df_t4 <- rackl(df_t4)
 df_t4_cdf <- apply(df_t4, 2, to_cdf)
 save(df_t4_cdf, file = 'df_t4_cdf.rda')
+rm(df_t4_cdf)
+gc()
 
 df_t3 <- cbind(df_t3, df_t4)
 df_m2 <- df_t3
 save(df_m2, file = 'df_m2.rda')
+rm(df_t3, df_t4, df_m2)
+gc()
+
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
+load('df_t3_cdf.rda')
+load('df_t4_cdf.rda')
 df_t3_cdf <- cbind(df_t3_cdf, df_t4_cdf)
 df_m2_cdf <- df_t3_cdf
 save(df_m2_cdf, file = 'df_m2_cdf.rda')
+rm(df_t3_cdf, df_t4_cdf, df_m2_cdf)
+gc()
 
-
-setwd('/home/crumplecup/work/')
+setwd(boot_dir)
 library(muddier)
 load('df_m1.rda')
 load('df_m2.rda')
 
 df_m1 <- cbind(df_m1, df_m2)
 save(df_m1, file = 'df_m1.rda')
+rm(df_m1, df_m2)
+gc()
+
+load('df_m1_cdf.rda')
+load('df_m2_cdf.rda')
 df_m1_cdf <- cbind(df_m1_cdf, df_m2_cdf)
 save(df_m1_cdf, file = 'df_m1_cdf.rda')
+rm(df_m1_cdf, df_m2_cdf)
+gc()
 
-
-setwd('/home/crumplecup/work/')
+setwd(boot_dir)
 library(muddier)
 load('df_t5.rda')
 df_t5 <- rackl(df_t5)
 df_t5_cdf <- apply(df_t5, 2, to_cdf)
 save(df_t5_cdf, file = 'df_t5_cdf.rda')
+rm(df_t5_cdf)
+gc()
 
 load('df_t6.rda')
 df_t6 <- rackl(df_t6)
 df_t6_cdf <- apply(df_t6, 2, to_cdf)
 save(df_t6_cdf, file = 'df_t6_cdf.rda')
+rm(df_t6_cdf)
+gc()
 
 df_t5 <- cbind(df_t5, df_t6)
 df_m2 <- df_t5
 save(df_m2, file = 'df_m2.rda')
+rm(df_t5, df_t6, df_m2)
+
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
+load('df_t5_cdf.rda')
+load('df_t6_cdf.rda')
 df_t5_cdf <- cbind(df_t5_cdf, df_t6_cdf)
 df_m2_cdf <- df_t5_cdf
 save(df_m2_cdf, file = 'df_m2_cdf.rda')
+rm(df_t5_cdf, df_t6_cdf, df_m2_cdf)
+gc()
 
 
-
-load('df_m2.rda')
 load('df_t7.rda')
 df_t7 <- rackl(df_t7)
 df_t7_cdf <- apply(df_t7, 2, to_cdf)
 save(df_t7_cdf, file = 'df_t7_cdf.rda')
+rm(df_t7_cdf)
+gc()
+
+load('df_m2.rda')
 df_m2 <- cbind(df_m2, df_t7)
 save(df_m2, file = 'df_m2.rda')
+rm(df_m2, df_t7)
+gc()
+
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
+load('df_m2_cdf.rda')
+load('df_t7_cdf.rda')
 df_m2_cdf <- cbind(df_m2_cdf, df_t7_cdf)
 save(df_m2_cdf, file = 'df_m2_cdf.rda')
+rm(df_m2_cdf, df_t7_cdf)
+gc()
 
-
-setwd('/home/crumplecup/work/')
+setwd('/home/crumplecup/work/boot/')
 library(muddier)
 load('df_m1.rda')
-load('df_m1_cdf.rda')
-
 df_m1a <- df_m1[1:2000, ]
 save(df_m1a, file = 'df_m1a.rda')
 df_m1a <- df_m1[2001:4430,]
 df_m1b <- df_m1a
 save(df_m1b, file = 'df_m1b.rda')
+rm(df_m1, df_m1a, df_m1b)
+gc()
 
+load('df_m1_cdf.rda')
 df_m1a_cdf <- df_m1_cdf[1:2000, ]
 save(df_m1a_cdf, file = 'df_m1a_cdf.rda')
 df_m1a_cdf <- df_m1_cdf[2001:4430,]
 df_m1b_cdf <- df_m1a_cdf
 save(df_m1b_cdf, file = 'df_m1b_cdf.rda')
+rm(df_m1_cdf, df_m1a_cdf, df_m1b_cdf)
+gc()
+
 
 load('df_m2.rda')
-load('df_m2_cdf.rda')
-
 df_m2a <- df_m2[1:2000, ]
 save(df_m2a, file = 'df_m2a.rda')
 df_m2a <- df_m2[2001:4430,]
 df_m2b <- df_m2a
 save(df_m2b, file = 'df_m2b.rda')
+rm(df_m2, df_m2a, df_m2b)
+gc()
 
+load('df_m2_cdf.rda')
 df_m2a_cdf <- df_m2_cdf[1:2000, ]
 save(df_m2a_cdf, file = 'df_m2a_cdf.rda')
 df_m2a_cdf <- df_m2_cdf[2001:4430,]
 df_m2b_cdf <- df_m2a_cdf
 save(df_m2b_cdf, file = 'df_m2b_cdf.rda')
+rm(df_m2_cdf, df_m2a_cdf, df_m2b_cdf)
+gc()
 
 
 load('df_m1a.rda')
@@ -945,14 +974,19 @@ df_ma <- df_m1a
 save(df_ma, file = 'df_ma.rda')
 
 df_ma_cis <- array(0, c(nrow(df_ma), 3))
+begin <- Sys.time()
 for (i in 1:nrow(df_ma))  {
-  print(i)
   df_ma_cis[i,] <- get_cis(df_ma[i,])
 }
+end <- Sys.time()
+end - begin  # Time difference of 2.191562 mins
 save(df_ma_cis, file = 'df_ma_cis.rda')
+rm(df_m1a, df_m2a, df_ma, df_ma_cis)
+gc()
 
 
-
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
 load('df_m1b.rda')
 load('df_m2b.rda')
 df_m1b <- cbind(df_m1b, df_m2b)
@@ -960,64 +994,106 @@ df_mb <- df_m1b
 save(df_mb, file = 'df_mb.rda')
 
 df_mb_cis <- array(0, c(nrow(df_mb), 3))
+begin <- Sys.time()
 for (i in 1:nrow(df_mb))  {
-  print(i)
   df_mb_cis[i,] <- get_cis(df_mb[i,])
 }
+end <- Sys.time()
+end - begin  # Time difference of 1.563305 mins
 save(df_mb_cis, file = 'df_mb_cis.rda')
+rm(df_m1b, df_m2b, df_mb)
+gc()
+
 load('df_ma_cis.rda')
 df_ma_cis <- rbind(df_ma_cis, df_mb_cis)
 df_pmfs_cis <- df_ma_cis
 save(df_pmfs_cis, file = 'df_pmfs_cis.rda')
+rm(df_ma_cis, df_mb_cis)
+gc()
 
 index <- sort(as.numeric(rownames(char_pmfs)))
-plot(index, df_pmfs_cis[,3], type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,10000))
+plot(index, df_pmfs_cis[,3], type = 'l', lwd = 3, col = 'slateblue', log = 'x',
+     ylim = c(0, .05))
 lines(index, df_pmfs_cis[,1], lwd = 3, lty = 2)
 lines(index, df_pmfs_cis[,2], lwd = 3)
+lines(index, df_pmf, lwd = 3, col = 'forestgreen')
+sum(df_pmfs_cis[,2])
 
+sum(df_pmf)
+lines(index,df_pmf)
 
-
+setwd('/home/crumplecup/work/boot')
+library(muddier)
 load('df_m1a_cdf.rda')
 load('df_m2a_cdf.rda')
 df_m1a_cdf <- cbind(df_m1a_cdf, df_m2a_cdf)
 df_ma_cdf <- df_m1a_cdf
 save(df_ma_cdf, file = 'df_ma_cdf.rda')
+rm(df_m1a_cdf, df_m2a_cdf)
+gc()
 
 df_ma_cdf_cis <- array(0, c(nrow(df_ma_cdf), 3))
 for (i in 1:nrow(df_ma_cdf))  {
-  print(i)
   df_ma_cdf_cis[i,] <- get_cis(df_ma_cdf[i,])
 }
 save(df_ma_cdf_cis, file = 'df_ma_cdf_cis.rda')
+rm(df_ma_cdf, df_ma_cdf_cis)
+gc()
 
 
-
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
 load('df_m1b_cdf.rda')
 load('df_m2b_cdf.rda')
 df_m1b_cdf <- cbind(df_m1b_cdf, df_m2b_cdf)
 df_mb_cdf <- df_m1b_cdf
 save(df_mb_cdf, file = 'df_mb_cdf.rda')
+rm(df_m1b_cdf, df_m2b_cdf)
+gc()
 
 df_mb_cdf_cis <- array(0, c(nrow(df_mb_cdf), 3))
+begin <- Sys.time()
 for (i in 1:nrow(df_mb_cdf))  {
-  print(i)
   df_mb_cdf_cis[i,] <- get_cis(df_mb_cdf[i,])
 }
 save(df_mb_cdf_cis, file = 'df_mb_cdf_cis.rda')
+end <- Sys.time()
+end - begin
+rm(df_mb_cdf)
+gc()
+
+
+setwd('/home/crumplecup/work/boot/')
+library(muddier)
 load('df_ma_cdf_cis.rda')
+load('df_mb_cdf_cis.rda')
 df_ma_cdf_cis <- rbind(df_ma_cdf_cis, df_mb_cdf_cis)
 df_cdfs_cis <- df_ma_cdf_cis
 save(df_cdfs_cis, file = 'df_cdfs_cis.rda')
 
+library(magrittr)
 index <- sort(as.numeric(rownames(char_pmfs)))
-plot(index, df_cdfs_cis[,3], type = 'l', lwd = 3, col = 'slateblue', xlim = c(0,10000))
-lines(index, df_cdfs_cis[,1], lwd = 3, lty = 2)
-lines(index, df_cdfs_cis[,2], lwd = 3)
+lwr <- df_cdfs_cis[,1]
+med <- df_cdfs_cis[,2]
+upr <- df_cdfs_cis[,3]
+emp <- df_cdf
 
+pal <- get_palette(c('ocean', 'charcoal', 'coral'), .8)
+png('df_cdf_cis_logx.png', height = 14, width = 17, unit = 'cm', res = 300)
+plot(index, lwr, type = 'l', lwd = 3, lty = 3, col = pal[2], #log = 'x',
+     main = 'Debris Flow Inherited Age CDF',
+     xlab = 'Age Post Year 2000', ylab = 'Proportion Age <= X')
+lines(index, upr, lwd = 3, lty = 3, col = pal[2])
+lines(index, emp, lwd = 3, col = pal[1])
+lines(index, med, lwd = 3, lty = 3, col = pal[3])
+legend('topleft', legend = c('ecdf', 'median', '95% CIs'),
+       fill = pal[c(1,3,2)])
+dev.off()
 
 
 ##
-
+setwd('/home/crumplecup/work/boot/')
+library(magrittr)
 load('df_t1.rda')
 df_t1 <- lapply(df_t1, rackb) %>% rack
 load('df_t2.rda')
@@ -1046,6 +1122,7 @@ df_cdfs_cis <- apply(df_cdfs, 1, get_cis)
 df_excs <- 1 - df_cdfs
 df_excs_cis <- apply(df_excs, 1, get_cis)
 
+setwd('/home/crumplecup/work/muddier/')
 usethis::use_data(df_pmfs, overwrite = T)
 usethis::use_data(df_pmfs_cis, overwrite = T)
 usethis::use_data(df_cdfs, overwrite = T)
@@ -1074,8 +1151,8 @@ load('df_cdfs_cis.rda')
 index <- sort(as.numeric(rownames(char_pmfs)))
 
 png('df_cdf.png', width = 6, height = 4, units = 'in', res = 300)
-plot(index, df_cdf, type = 'l', col = 'slateblue',
-     xlim = c(0,10000), ylim = c(0,1), main = 'Debris Flow Inherited Age CDF',
+plot(index, df_cdf, type = 'l', col = 'slateblue', log = 'x',
+     ylim = c(0,1), main = 'Debris Flow Inherited Age CDF',
      xlab = 'Inherited Age (years)', ylab = 'Proportion Age <= X')
 lines(index, df_cdfs_cis[1,], lty = 2)
 lines(index, df_cdfs_cis[3,], lty = 2)

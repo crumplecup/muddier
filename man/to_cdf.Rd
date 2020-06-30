@@ -4,7 +4,7 @@
 \alias{to_cdf}
 \title{to_cdf converts numeric pmf vector to cdf of equal length}
 \usage{
-to_cdf(pmf, by = pmf)
+to_cdf(pmf)
 }
 \arguments{
 \item{pmf}{is a numeric vector}
@@ -14,5 +14,4 @@ a numeric vector of the cdf
 }
 \description{
 Given a numeric pmf, returns a numeric vector of the cdf.
-sorts pmf
 }

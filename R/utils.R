@@ -101,13 +101,13 @@ cdf_dif <- function(cdf) {
 
 #' derived pmf by subtraction
 #'
-#' Given two pmfs and an age vector, returns the derived pmf of the convolution y-x.
+#' Given two pmfs and an age vector, returns the derived pmf of the convolution x-y.
 #' Lengths of x,y and index must be equal.
 #'
 #' @param x is a numeric vector (older pmf)
 #' @param y is a numeric vector (younger pmf)
 #' @param index is a numeric vector (years)
-#' @return a length(index) numeric vector of the convolved distribution of y-x
+#' @return a length(index) numeric vector of the convolved distribution of x-y
 #' @seealso convo_minus
 #'
 #' @export
@@ -154,7 +154,9 @@ convo_lis <- function(lis, pmfs = char_pmfs)  {
 
 #' convo list
 #'
-#' convolves pmfs by rank list
+#' convolves pmfs by rank list.
+#' added 50 years to index because sample age is set to 1950
+#' but goes to 2000.
 #'
 #' @param ranks is a vector of ranks or list of rank vectors
 #' @param pmfs is a matrix with cols obs and rows probs
@@ -334,9 +336,9 @@ fit_pmf <- function(vals,index)  {
 
 get_cis <- function(x, lwr=.0250, med=.5000, upr=.9750)  {
   n <- length(x)
-  id_lwr <- n * lwr
-  id_med <- n * med
-  id_upr <- n * upr
+  id_lwr <- round(n * lwr)
+  id_med <- round(n * med)
+  id_upr <- round(n * upr)
   vec <- sort(x)
   cis <- vec[c(id_lwr, id_med, id_upr)]
   names(cis) <- c('lwr','med','upr')
@@ -589,20 +591,19 @@ sum_pmfs <- function(lis,len)  {
 #' to_cdf converts numeric pmf vector to cdf of equal length
 #'
 #' Given a numeric pmf, returns a numeric vector of the cdf.
-#' sorts pmf
+#'
 #'
 #' @param pmf is a numeric vector
 #' @return a numeric vector of the cdf
 #'
 #' @export
 
-to_cdf <- function(pmf, by = pmf)  {
+to_cdf <- function(pmf)  {
   cdf <- array(0,length(pmf))
   if (sum(pmf) != 1) pmf <- normalize(pmf)
-  pmf <- pmf[order(by)]
   for (i in seq_along(pmf)) {
     if (i == 1) cdf[i] <- pmf[i]
-    if (i >1 )  cdf[i] <- pmf[i] + cdf[i-1]
+    if (i > 1)  cdf[i] <- pmf[i] + cdf[i-1]
   }
   cdf
 }

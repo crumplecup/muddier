@@ -491,8 +491,8 @@ for(i in seq_along(dp_crk)) {
 scl <- 255
 sub$dp_cols <- rose_bush[round((sub$DebrisFlow / max(sub$DebrisFlow)) * 255)]
 sub$wt_cols <- 0
-sub$wt_cols[sub$wt > 1] <- forest_ramp[round((sub$wt[sub$wt > 1] /
-                                                max(sub$wt[sub$wt > 1])) * scl)]
+sub$wt_cols[sub$wt > 1 & sub$wt < 2] <- forest_ramp[round((sub$wt[sub$wt > 1 & sub$wt < 2] /
+                                                max(sub$wt[sub$wt > 1 & sub$wt < 2])) * scl)]
 wt_inv <- round(((1 / sub$wt) / max(1 / sub$wt)) * scl)
 for (i in seq_along(wt_inv)) {
   wt_inv[i] <- blood_ramp[wt_inv[i]]
@@ -931,12 +931,17 @@ legend('bottomright', legend = c('debris flows', 'total samples'),
        fill = pal[2:1])
 dev.off()
 
+writeOGR(sub, '/home/crumplecup/work/df_wt.shp',
+         'df_wt', driver = 'ESRI Shapefile')
 
 
+legend('bottomright', legend = c('Lower Del. Prob.', 'No Change', 'Higher Del. Prob.'),
+       fill = get_palette(c('crimson', 'gold', 'forest'), 1))
 
 
-
-
+plot(1:10, 1:10)
+legend('topright', legend = c('Higher Del. Prob', 'No Change', 'Lower Del. Prob'),
+       fill = get_palette(c('crimson', 'slate', 'ocean'), .66))
 
 
 

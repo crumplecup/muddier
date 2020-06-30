@@ -140,11 +140,13 @@ load('rip_4band_df.rds')
 load('rip_bin1.rds')
 load('rip_bin2.rds')
 rip_lmod <- lm(as.character(lmod[1,1]), data = df)
+rip_lmod3 <- lm(as.character(lmod[1,1]), data = df)
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(rip_lmod)
 usethis::use_data(rip_bin1)
 usethis::use_data(rip_bin2)
+usethis::use_data(rip_lmod3)
 
 
 img_to_array <- function(files, in_path)  {
@@ -714,7 +716,7 @@ setwd('/home/crumplecup/work/muddier')
 usethis::use_data(conv_mod, overwrite = T)
 
 ras_dir <- '/media/crumplecup/BentonCo/Statewide2018_Prelim/JustBenton'
-mod_path <- '/home/crumplecup/work/rip_mod5_aug20.h5'
+mod_path <- '/home/crumplecup/work/rip_mod5_aug50.h5'
 out_dir <- ('/home/crumplecup/work')
 
 data(samples, package = 'riparian')
@@ -783,9 +785,18 @@ for (j in 1:50)  {
   car <- color_array(r)
   prd <- predict(rip_lmod, newdata = car)
 
-  obs <- plot_samples(ras_dir, slc_path, sam[c(1,3,5:14,16:18), ],
-                      method = 'binom', mod_path)
+  out_dir <- ('/home/crumplecup/work')
+  setwd(out_dir)
+  load('sam.rds')
+  slc_path <- file.path(out_dir, 'slices')
+  ras_dir <- '/media/crumplecup/Seagate Backup Plus Drive/gis/ortho2018'
+  mod_path <- '/home/crumplecup/work/mod5_simple20_2.h5'
+  obs <- plot_samples(ras_dir, slc_path, sam[c(14, 1,3,5:13,16:18), ],
+                      method = 'ml', mod_path)
   obs
 
-
+  obs <- plot_samples(ras_dir, slc_path, sam[c(14, 1,3,5:13,16:18), ],
+                      method = 'lm3')
+  obs
+}
 

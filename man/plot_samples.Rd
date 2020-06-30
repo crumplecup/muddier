@@ -4,7 +4,7 @@
 \alias{plot_samples}
 \title{Print Sample Plots}
 \usage{
-plot_samples(in_path, out_path, polys = samples, method = "lmod",
+plot_samples(in_path, out_path, polys = samples, method = "lm",
   mod_path)
 }
 \arguments{

@@ -448,6 +448,20 @@ nodes@coords[nodes$NODE_ID == kn_id] %>% plot_pt(20)
 nodes@coords[nodes$NODE_ID == kn2_id] %>% plot_pt(50)
 
 
+# all creek transects
+creek_transects <- nodes[nodes$NODE_ID %in% c(
+  bear_ids, ced_ids_lng, hoff_ids, knowles_ids
+), ]
+creek_transects$creek_name <- 0
+creek_transects$creek_name[creek_transects$NODE_ID %in% bear_ids] <- 'bear'
+creek_transects$creek_name[creek_transects$NODE_ID %in% ced_ids_lng] <- 'cedar'
+creek_transects$creek_name[creek_transects$NODE_ID %in% hoff_ids] <- 'hoffman'
+creek_transects$creek_name[creek_transects$NODE_ID %in% knowles_ids] <- 'knowles'
+
+setwd('/home/crumplecup/work/muddier')
+usethis::use_data(creek_transects)
+setwd('/home/crumplecup/work')
+writeOGR(creek_transects, work_dir, 'creek_transects', driver = 'ESRI Shapefile')
 
 # radiocarbon georefs
 
@@ -501,6 +515,11 @@ creeks_radio <- rbind(bear_radio, rbind(cedar_radio, knowles_radio))
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(creeks_radio, overwrite = T)
+setwd('/home/crumplecup/work')
+
+creeks_radiocarbon <- nodes[nodes$NODE_ID %in% creeks_radio$node_ids, ]
+writeOGR(creeks_radiocarbon, work_dir, 'creeks_radiocarbon',
+         driver = 'ESRI Shapefile')
 
 
 

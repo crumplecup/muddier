@@ -80,3 +80,10 @@ inher_age <- charcoal[,.(test = .N > 3, site_id, rank), keyby = .(facies, family
 inher_age <- inher_age[test == 'TRUE', .(site_id, rank, count = .N), keyby = .(facies, family)]
 usethis::use_data(inher_age)
 
+
+# change rownames of char_pmfs to change from year 2000 instead of 1950
+library(magrittr)
+new_pmfs <- char_pmfs
+rownames(char_pmfs) <- seq(0, (nrow(new_pmfs)*5)-1, 5) %>% as.character %>% rev
+setwd('/home/crumplecup/work/muddier')
+usethis::use_data(char_pmfs, overwrite = T)

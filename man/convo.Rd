@@ -14,10 +14,10 @@ convo(x, y, index)
 \item{index}{is a numeric vector (years)}
 }
 \value{
-a length(index) numeric vector of the convolved distribution of y-x
+a length(index) numeric vector of the convolved distribution of x-y
 }
 \description{
-Given two pmfs and an age vector, returns the derived pmf of the convolution y-x.
+Given two pmfs and an age vector, returns the derived pmf of the convolution x-y.
 Lengths of x,y and index must be equal.
 }
 \seealso{

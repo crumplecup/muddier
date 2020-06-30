@@ -200,6 +200,16 @@ plot_samples <- function(in_path, out_path, polys = samples,
         obs[i, j] <- cov
       }
 
+      if (method == 'lm3') {
+        car <- color_array_3band(slc)
+        prd <- predict(rip_lmod3, newdata = car)
+        cov <- 0
+        if (prd > .25) cov <- 1
+        if (prd > .75) cov <- 2
+        obs[i, j] <- cov
+      }
+
+
       if (method == 'binom') {
         car <- color_array(slc)
         cov <- predict(rip_bin1, newdata = car)
@@ -285,6 +295,34 @@ color_array <- function(img) {
                      'blu_mn', 'blu_sd', 'blu_sm',
                      'nir_mn', 'nir_sd', 'nir_sm',
                      'ndv_mn', 'ndv_sd', 'ndv_sm')
+  df
+}
+
+
+#' color_array_3band
+#'
+#' extracts color statistics from raster image
+#'
+#' @param img is a raster stack of 3 bands rgb
+#' @return an array of summary color statistics
+#' @export
+color_array_3band <- function(img) {
+  ar <- raster::values(img)
+  ar <- ar[!is.na(ar[ ,1]), ]
+  car <- array(0, c(1, 15))
+  car[1, 1] <- mean(ar[ , 1])
+  car[1, 2] <- sd(ar[ , 1])
+  car[1, 3] <- sum(ar[ , 1])
+  car[1, 4] <- mean(ar[ , 2])
+  car[1, 5] <- sd(ar[ , 2])
+  car[1, 6] <- sum(ar[ , 2])
+  car[1, 7] <- mean(ar[ , 3])
+  car[1, 8] <- sd(ar[ , 3])
+  car[1, 9] <- sum(ar[ , 3])
+  df <- as.data.frame(car)
+  colnames(df) <- c('red_mn', 'red_sd', 'red_sm',
+                    'grn_mn', 'grn_sd', 'grn_sm',
+                    'blu_mn', 'blu_sd', 'blu_sm')
   df
 }
 
