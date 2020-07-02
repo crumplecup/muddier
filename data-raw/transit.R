@@ -49,6 +49,161 @@ nrow(df)
 nrow(ff)
 nrow(fg)
 
+library(fitdistrplus)
+descdist(df_cdf %>% as.vector)
+df_exp <- fitdist(df_cdf %>% as.vector, 'exp')
+df_gam <- fitdist(df_cdf %>% as.vector, 'gamma')
+df_bet <- fitdist(df_cdf %>% as.vector, 'beta')
+df_wbl <- fitdist(df_cdf %>% as.vector, 'weibull')
+df_lnorm <- fitdist(df_cdf %>% as.vector, 'lnorm')
+
+
+cdfcomp(list(df_exp, df_gam, df_bet, df_wbl, df_lnorm),
+        legendtext=c('exp', 'gamma', 'beta', 'weibull', 'lognormal'))
+denscomp(list(df_exp, df_gam, df_bet, df_wbl, df_lnorm),
+         legendtext=c('exp', 'gamma', 'beta', 'weibull', 'lognormal'))
+qqcomp(list(df_exp, df_gam, df_bet, df_wbl, df_lnorm),
+       legendtext=c('exp', 'gamma', 'beta', 'weibull', 'lognormal'))
+ppcomp(list(df_exp, df_gam, df_bet, df_wbl, df_lnorm),
+       legendtext=c('exp', 'gamma', 'beta', 'weibull', 'lognormal'))
+gofstat(list(df_exp, df_gam, df_bet, df_wbl, df_lnorm),
+        fitnames=c('exp', 'gamma', 'beta', 'weibull', 'lognormal'))
+
+df_exp <- fitdist(df_pmf %>% as.vector, 'exp')
+
+plot(df_exp)
+gofstat(df_exp)
+
+# interarrival times for debris flows
+
+
+# take weighted mean
+
+
+
+# order by weighted mean
+index <- char_pmfs %>% rownames %>% as.numeric %>% sort
+da_mn <- apply(da_df, 2, function (x) weighted.mean(index, x))
+dadf <- da_df[, order(da_mn)]
+damn <- sort(da_mn)
+dmn <- apply(dadf, 2, function (x) weighted.mean(index, x))
+# dmn == damn
+
+# convolve sequential flows
+it <- array(0, c(nrow(dadf), ncol(dadf)-1))
+for (i in 1:(ncol(dadf)-1)) {
+  it[ , i] <- convo(dadf[ , i+1], dadf[ , i], index)
+}
+
+bit <- convo(dadf[,5], dadf[,4], index)
+weighted.mean(index, bit)
+
+itmn <- apply(it, 2, function (x) weighted.mean(index, x))
+
+# fit to exponential distribution
+it_exp <- fitdist(itmn, 'exp')
+plot(it_exp)
+coef(it_exp)
+
+dmn <- damn[-1]
+dmn <- dmn[order(itmn)]
+
+plot(log10(damn[-c(1:4)]), itmn[-c(1:3)])
+plot(damn[-c(1:4)], itmn[-c(1:3)], log = 'xy', pch = 20, col = get_palette('ocean'),
+     xlab = 'deposit age', ylab = 'interarrival time')
+
+# interarrival times vs. deposit ages appear to follow a power law
+# representing an evacuation rate of deposits
+# the expected interarrival rate is the rate before evacuation
+
+# fit interarrival times to deposit ages to detrend
+
+df <- data.frame(it = log(itmn[-c(1:3)]), age = log(damn[-c(1:4)]))
+lit <- lm('it ~ age', data = df)
+summary(lit)
+plot(lit)
+
+pit <- predict(lit, newdata = data.frame(age = log(damn[-c(1:4)])))
+
+plot(damn[-c(1:4)], itmn[-c(1:3)], log = 'xy', pch = 20, col = get_palette('ocean'),
+     xlab = 'deposit age', ylab = 'interarrival time')
+lines(damn[-c(1:4)], exp(pit), pch = 20, col = get_palette('forest'), lwd = 2)
+
+# subtract min time from all interarrival times
+# fit to deposit ages
+# subtract fit times from all interarrival times
+
+df <- data.frame(it = log(itmn[-c(1:3)]),
+                 age = log(damn[-c(1:4)]))
+lit <- lm('it ~ age', data = df)
+summary(lit)
+
+pt <- exp(coef(lit)[1] + log(damn[-c(1:4)]) * coef(lit)[2])
+pd <- pt - min(pt)
+ip <- itmn[-c(1:3)] - pd
+ip[ip <= 0] <- 1
+dmn <- damn[-c(1:4)]
+plot(dmn, ip, log = 'xy', pch = 20, col = get_palette('ocean'),
+     xlab = 'deposit age', ylab = 'interarrival time')
+points(dmn[ip == 1], ip[ip == 1], pch = 20, col = get_palette('slate'))
+points(dmn[ip == 1], ip[ip == 1], pch = 20, col = get_palette('coral'))
+
+plot(damn[-c(1:4)], itmn[-c(1:3)], log = 'xy', pch = 20, col = get_palette('ocean'),
+     xlab = 'deposit age', ylab = 'interarrival time')
+lines(damn[-c(1:4)], exp(pit), pch = 20, col = get_palette('forest'), lwd = 3)
+lines(damn[-c(1:4)], pd, pch = 20, col = get_palette('coral'), lwd = 3)
+
+
+# scope of interarrival period
+
+# change in contributing area over each study area
+
+br_contr <- max(creeks$contr_area[creeks$creek_name == 'bear'])
+cd_contr <- max(creeks$contr_area[creeks$creek_name == 'cedar'])
+hf_contr <- max(creeks$contr_area[creeks$creek_name == 'hoffman'])
+kn_contr <- max(creeks$contr_area[creeks$creek_name == 'knowles'])
+gr_contr <- 4.732 ## from GRC_SedVol_new_20170315
+
+# number of nodes per study area
+br_N <- nrow(creeks[creeks$creek_name == 'bear', ])
+cd_N <- nrow(creeks[creeks$creek_name == 'cedar', ])
+hf_N <- nrow(creeks[creeks$creek_name == 'hoffman', ])
+kn_N <- nrow(creeks[creeks$creek_name == 'knowles', ])
+gr_N <- round(kn_N * gr_contr / kn_contr)
+
+# ratio of contributing area represented by nodes with debris flows
+crk_contr <- br_contr + cd_contr + hf_contr + kn_contr + gr_contr
+crk_N <- br_N + cd_N + hf_N + kn_N + gr_N
+df_contr <- crk_contr * ncol(dadf) / (crk_N)
+
+ic <- ip * df_contr
+ic[ic == df_contr] <- 1
+
+dm500 <- dmn[dmn <= 500]
+ic500 <- ic[dmn <= 500]
+df500 <- data.frame(it = ic500, age = dm500)
+m500 <- lm(it ~ age, data = df500)
+summary(m500)
+
+plot(dmn, ic, log = 'xy', pch = 20, col = get_palette('ocean'),
+     xlab = 'deposit age', ylab = 'interarrival time per km2')
+points(dmn[ic == 1], ip[ip == 1], pch = 20, col = get_palette('slate'))
+points(dmn[ic == 1], ip[ip == 1], pch = 20, col = get_palette('coral'))
+abline(coef = coef(m500), lwd = 3)
+abline(h = mean(ic500), lwd = 2, col = get_palette('charcoal', .8))
+text(9500, 125, paste0('mean = ', round(mean(ic500), 2)), cex = .8)
+
+# save objects
+
+setwd('/home/crumplecup/work/muddier/')
+usethis::use_data(dadf, overwrite = T)
+usethis::use_data(it, overwrite = T)
+usethis::use_data(dmn, overwrite = T)
+usethis::use_data(ic, overwrite = T)
+usethis::use_data(ip, overwrite = T)
+usethis::use_data(m500, overwrite = T)
+
+
 index <- char_pmfs %>% rownames %>% as.numeric
 
 begin <- Sys.time()
