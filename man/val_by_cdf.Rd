@@ -4,18 +4,16 @@
 \alias{val_by_cdf}
 \title{val_by_cdf}
 \usage{
-val_by_cdf(vals, by = vals, ln = 100)
+val_by_cdf(vals, ln = 100)
 }
 \arguments{
-\item{by}{is a numeric vector of length `val`}
-
 \item{ln}{is an integer}
 
 \item{val}{is a numeric vector}
 }
 \value{
-values of `val` at cdf of `val` with respect to `by`
+values of `val` at cdf of `val`
 }
 \description{
-values at position of cdf of `val` with respect to `by`
+values at position of cdf of `val`
 }

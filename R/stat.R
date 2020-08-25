@@ -1,3 +1,141 @@
+#' events
+#'
+#' round a series of values to nearest index number in counts
+#'
+#' @param vals is a numeric vector of variable values
+#' @param index is an numeric vector of index values for `vals`
+#' @return a count of vals rounding to values of `index`
+#' @export
+
+events <- function(vals, index) {
+  e <- array(0, length(index))
+  k <- 1
+  n <- length(vals)
+  inc <- (index[2] - index[1]) / 2
+  for (i in seq_along(index)) {
+    while (as.numeric(vals[k]) < index[i] + inc &
+           k <= n) {
+      if (vals[k] >= index[i] - inc) {
+        e[i] <- e[i] + 1
+        k <- k + 1
+      }
+    }
+  }
+  return(e)
+}
+
+#' ages
+#'
+#'
+#'
+#' @param vals is a numeric vector of variable values
+#' @param index is a reference index of values inclusive of `vals`
+#' @return vector of `vals` rounded to nearest `index` value
+#' @export
+
+ages <- function(vals, index) {
+  e <- events(vals, index)
+  evt <- array(0, length(vals))
+  evts <- e[e > 0]
+  idx <- index[e > 0]
+  k <- 1
+  for (i in seq_along(evts)) {
+    for (j in 1:evts[i]) {
+      evt[k] <- idx[i]
+      k <- k + 1
+    }
+  }
+  return(evt)
+}
+
+
+#' arrivals
+#'
+#'
+#'
+#' @param vals is a numeric vector of variable values
+#' @param index is a reference index of values inclusive of `vals`
+#' @return a vector length `index` showing the number of `vals` in each rounding to the nearest index
+#' @export
+
+arrivals <- function(vals, index) {
+  evt <- ages(vals, index)
+  it <- array(0, length(evt) - 1)
+  for (i in seq_along(it)) {
+    it[i] <- evt[i+1] - evt[i]
+  }
+  return(it)
+}
+
+
+#' back_window
+#'
+#' divides values associated with index numbers into subsets based upon a background window
+#'
+#' @param vals is a numeric vector of values
+#' @param index is a numeric vector of index values
+#' @param window is a number specifying the length of background window
+#' @param type is a string, options = c('float', 'discrete', 'log', 'float_log')
+#' @return list of `vals` in `window` along `index`
+#' @export
+
+back_window <- function(vals, index, window = 500, type = 'float') {
+  ls <- list()
+  if (type == 'float') {
+    for (i in seq_along(index)) {
+      upr <- index[i] + window / 2
+      lwr <- index[i] - window / 2
+      vs <- vals[index >= lwr & index <= upr]
+      is <- index[index >= lwr & index <= upr]
+      ar <- array(c(vs, is), c(length(vs), 2))
+      ls[[i]] <- ar
+    }
+  }
+  if (type == 'discrete') {
+    n <- ceiling(max(index) / window)
+    for (i in 1:n) {
+      lwr <- window * (i-1)
+      upr <- window * i
+      vs <- vals[index >= lwr & index <= upr]
+      is <- index[index >= lwr & index <= upr]
+      ar <- array(c(vs, is), c(length(vs), 2))
+      ls[[i]] <- ar
+    }
+  }
+  if (type == 'log') {
+    n <- get_logmax(max(index))
+    for (i in 1:n) {
+      lwr <- 10^(i-1)
+      upr <- 10^i
+      vs <- vals[index >= lwr & index <= upr]
+      is <- index[index >= lwr & index <= upr]
+      ar <- array(c(vs, is), c(length(vs), 2))
+      ls[[i]] <- ar
+    }
+  }
+  if (type == 'float_log') {
+    for (i in seq_along(index)) {
+      lwr <- index[i] / 10
+      upr <- index[i] * 10
+      vs <- vals[index >= lwr & index <= upr]
+      is <- index[index >= lwr & index <= upr]
+      ar <- array(c(vs, is), c(length(vs), 2))
+      ls[[i]] <- ar
+    }
+  }
+  return(ls)
+}
+
+get_logmax <- function(n) {
+  k <- 0
+  go <- TRUE
+  while (go) {
+    if (10^k >= n) go <- FALSE
+    if (10^k < n) k <- k + 1
+  }
+  return (k)
+}
+
 #' bin_cdfs
 #'
 #' returns a dataframe of change in cdf of each var by bin
@@ -160,6 +298,28 @@ discrete_bin <- function(vals, bin_len) {
     }
   }
   return(bin_vals)
+}
+
+
+
+#' emp_cdf
+#'
+#' derives the empiric cdf of a numeric vector of values
+#'
+#' @param vals is a numeric vector of variable values
+#' @return the empiric cdf of `vals`
+#' @export
+
+emp_cdf <- function(vals) {
+  uniq <- unique(sort(vals))
+  cdf <- array(0, length(uniq))
+  n <- length(vals)
+  for (i in seq_along(uniq)) {
+    cdf[i] <- length(vals[vals <= uniq[i]]) / n
+  }
+  mat <- matrix(c(uniq, cdf), ncol = 2)
+  colnames(mat) <- c('x', 'y')
+  return(mat)
 }
 
 

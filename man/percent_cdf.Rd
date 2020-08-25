@@ -4,19 +4,17 @@
 \alias{percent_cdf}
 \title{percent_cdf}
 \usage{
-percent_cdf(vec, by = vec, ln = 100)
+percent_cdf(vec, ln = 100)
 }
 \arguments{
 \item{vec}{is a numeric vector}
 
-\item{by}{is a numeric vector of length `vec`}
-
 \item{ln}{is an integer}
 }
 \value{
-a cdf length `ln ` of `vec` with respect to `by`
+a cdf length `ln ` of `vec`
 }
 \description{
-computes the cdf of `vec` with respect to `by`
+computes the cdf of `vec`
 coerces to length `ln`
 }

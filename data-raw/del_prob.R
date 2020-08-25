@@ -3,6 +3,125 @@ library(magrittr)
 library(sp)
 library(muddier)
 
+site <- creeks_radio$node_ids
+counts <- 0
+for (i in seq_along(site)) {
+  counts[i] <- length(site[site == site[i]])
+}
+mults <- site[counts > 1] %>% factor %>% levels
+
+crks <- creeks_radio[!creeks_radio$node_ids %in% mults, ]
+
+for (i in seq_along(mults)) {
+  sub <- creeks_radio[creeks_radio$node_ids == mults[i], ]
+  crks <- rbind(crks, sub[1,])
+}
+
+crks <- crks[crks$creek_name != 'cedar', ]
+
+crks$dp <- 0
+for (i in seq_along(crks$dp)) {
+  crks$dp[i] <- creeks$DebrisFlow[creeks$NODE_ID == crks$node_ids[i]]
+}
+
+df_crks <- crks[crks$Stratigraphy == 'DF', ]
+cdf_crks <- to_cdf(crks$dp)
+
+# pct_cdf_df <- percent_cdf(df_crks$dp, ln = length(crks$dp))
+# pct_cdf_crks <- percent_cdf(crks$dp, ln = nrow(df_crks))
+#
+# cdf_df <- to_cdf(df_crks$dp)
+
+
+rho_df <- nrow(df_crks) / nrow(crks)
+
+
+pct_cdf <- function(vec, by = vec, ln = 100) {
+  vec <- to_cdf1(normalize(vec), by = by)
+  n <- length(vec)
+  cdf <- vector(length = ln, mode = 'numeric')
+  for (i in 1:ln) {
+    cdf[i] <- length(vec[vec <= i/ln]) / n
+  }
+  return(cdf)
+}
+
+
+to_cdf1 <- function(pmf, by = pmf)  {
+    cdf <- array(0,length(pmf))
+    if (sum(pmf) != 1) pmf <- normalize(pmf)
+    pmf <- pmf[order(by)]
+    for (i in seq_along(pmf)) {
+      if (i == 1) cdf[i] <- pmf[i]
+      if (i > 1)  cdf[i] <- pmf[i] + cdf[i-1]
+    }
+    cdf
+  }
+
+dfcdf <- to_cdf1(df_crks$dp)
+crkcdf <- to_cdf1(crks$dp)
+
+pct_crkcdf <- pct_cdf(crks$dp, ln = length(dfcdf))
+
+lg_cdf_df <- log(dfcdf)
+lg_cdf_crks <- log(pct_crkcdf)
+
+lmod <- lm(lg_cdf_df ~ lg_cdf_crks)
+lpred <- predict(lmod, data.frame(lg_cdf_crks = log(cdf_crks)))
+epred <- exp(lpred)
+
+edif <- cdf_dif(epred)
+ddif <- cdf_dif(cdf_crks)
+fx <- edif / ddif * (1/rho_df)
+
+dp_vals <- sort(crks$dp)
+
+df <- data.frame(df = lg_cdf_df, crk = lg_cdf_crks)
+
+mod1 <- lm(df ~ crk, data = df[1:35,])
+mod2 <- lm(df ~ crk, data = df[30:39,])
+mod3 <- lm(df ~ crk, data = df[36:45,])
+
+pred1 <- exp(predict(mod1, newdata = data.frame(crk = log(cdf_crks))))
+pred2 <- exp(predict(mod2, newdata = data.frame(crk = log(cdf_crks))))
+pred3 <- exp(predict(mod3, newdata = data.frame(crk = log(cdf_crks))))
+
+# cdf_ids <- ragged_bin(1:length(cdf_crks), 3)
+pred <- c(pred1[1:78], pred2[79:85], pred3[86:89])
+
+
+# save data
+setwd('/home/crumplecup/work/muddier/')
+
+df_wt <- data.frame(wt = fx, dp = dp_vals)
+usethis::use_data(df_wt, overwrite = T)
+
+dfcdf_prd <- data.frame(dfcdf_prd = pred, cdf_crks = cdf_crks)
+usethis::use_data(dfcdf_prd, overwrite = T)
+
+
+
+setwd('/home/crumplecup/work/')
+png('wt_dp1.png', height = 17, width = 23, units = 'cm', res = 300)
+plot(emp_cdf(crks$dp)[,1], fx, type = 'l', lwd = 3, col = get_palette('ocean', .7),
+     xlab = 'MB Delivery Probability Index', ylab = 'Relative Density of Debris Flows',
+     main = 'Fig. A', log = 'x')
+dev.off()
+
+png('wt_dp2.png', height = 17, width = 23, units = 'cm', res = 300)
+plot(emp_cdf(crks$dp)[,1], fx, type = 'l', lwd = 3, col = get_palette('ocean', .7),
+     xlab = 'MB Delivery Probability Index', ylab = 'Weighting Function',
+     main = 'Fig. A')
+dev.off()
+
+png('df_crks.png', height = 17, width = 23, units = 'cm', res = 300)
+plot(pct_crkcdf, dfcdf,
+     xlab = 'CDF of Total Samples', ylab = 'CDF of Debris Flows')
+lines(cdf_crks, pred, lwd = 2, col = get_palette('ocean', .7))
+dev.off()
+
+#older code
+
 # here i scrub NAs and bad values that need to be checked / redone
 sub <- creeks[!is.na(creeks$slope) & !(creeks$NODE_ID %in% cedar$NODE_ID[105:156]),]
 
@@ -106,75 +225,9 @@ sub$wt <- wt
 #op <- op / max(op)
 #np <- sort(dat$del_prob) / max(dat$del_prob)
 
-site <- creeks_radio$node_ids
-counts <- 0
-for (i in seq_along(site)) {
-  counts[i] <- length(site[site == site[i]])
-}
-mults <- site[counts > 1] %>% factor %>% levels
-
-crks <- creeks_radio[!creeks_radio$node_ids %in% mults, ]
-
-for (i in seq_along(mults)) {
-  sub <- creeks_radio[creeks_radio$node_ids == mults[i], ]
-  crks <- rbind(crks, sub[1,])
-}
-
-
-crks$dp <- 0
-for (i in seq_along(crks$dp)) {
-  crks$dp[i] <- creeks$DebrisFlow[creeks$NODE_ID == crks$node_ids[i]]
-}
-
-df_crks <- crks[crks$Stratigraphy == 'DF', ]
-
-pct_cdf_df <- percent_cdf(df_crks$dp, ln = length(crks$dp))
-pct_cdf_crks <- percent_cdf(df_crks$dp, ln = nrow(df_crks))
-
-cdf_df <- to_cdf(df_crks$dp)
-cdf_crks <- to_cdf(crks$dp)
-
-
-rho_df <- nrow(df_crks) / nrow(crks)
-
-lg_cdf_df <- log(cdf_df)
-lg_cdf_crks <- log(pct_cdf_crks)
-
-lmod <- lm(lg_cdf_df ~ lg_cdf_crks)
-lpred <- predict(lmod, data.frame(lg_cdf_crks = log(cdf_crks)))
-epred <- exp(lpred)
-
-edif <- cdf_dif(epred)
-ddif <- cdf_dif(cdf_crks)
-fx <- edif / ddif * (1/rho_df)
-
-dp_vals <- sort(crks$dp)
-
-df <- data.frame(df = lg_cdf_df, crk = lg_cdf_crks)
-
-mod1 <- lm(df ~ crk, data = df[1:18,])
-mod2 <- lm(df ~ crk, data = df[19:35,])
-mod3 <- lm(df ~ crk, data = df[36:46,])
-
-pred1 <- exp(predict(mod1, newdata = data.frame(crk = log(cdf_crks))))
-pred2 <- exp(predict(mod2, newdata = data.frame(crk = log(cdf_crks))))
-pred3 <- exp(predict(mod3, newdata = data.frame(crk = log(cdf_crks))))
-
-# cdf_ids <- ragged_bin(1:length(cdf_crks), 3)
-pred <- c(pred2[1:94], pred3[95:98])
-
-edif <- cdf_dif(pred)
-ddif <- cdf_dif(cdf_crks)
-fx <- edif / ddif * (1/rho_df)
 
 
 
-
-
-
-
-
-#older code
 
 creeks_radio$dp <- 0
 for (i in seq_along(creeks_radio$dp)) {

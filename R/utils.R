@@ -380,16 +380,15 @@ normalize <- function(probs)  {
 
 #' percent_cdf
 #'
-#' computes the cdf of `vec` with respect to `by`
+#' computes the cdf of `vec`
 #' coerces to length `ln`
 #'
 #' @param vec is a numeric vector
-#' @param by is a numeric vector of length `vec`
 #' @param ln is an integer
-#' @return a cdf length `ln ` of `vec` with respect to `by`
+#' @return a cdf length `ln ` of `vec`
 #' @export
-percent_cdf <- function(vec, by = vec, ln = 100) {
-  vec <- to_cdf(normalize(vec), by = by)
+percent_cdf <- function(vec, ln = 100) {
+  vec <- emp_cdf(vec)[,2]
   n <- length(vec)
   cdf <- vector(length = ln, mode = 'numeric')
   for (i in 1:ln) {
@@ -667,6 +666,25 @@ to_pmf <- function(cdf)  {
   pmf
 }
 
+#' tracker
+#'
+#' prints percent complete and time remaining estimate to console
+#'
+#' @param i is an integer specifying the index position
+#' @param n is an integer specifying the number of interations in the loop
+#' @param begin is a time object from a call to Sys.time()
+#' @return prints percent complete and time remaining estimate to console
+
+tracker <- function(i, n, begin) {
+  now <- Sys.time()
+  dif <- now - begin
+  pace <- dif / i
+  rem <- (pace * n) - dif
+  print(paste0('Percent Done: ', round(i/n*100, 2), '%'))
+  print(paste0('Time Remaining: ', round(as.numeric(rem, units = 'hours'), 2), ' hours'))
+}
+
+
 
 #' truncate at zero
 #'
@@ -712,16 +730,15 @@ trunc_norm <- function(pmf, index)  {
 
 #' val_by_cdf
 #'
-#' values at position of cdf of `val` with respect to `by`
+#' values at position of cdf of `val`
 #'
 #' @param val is a numeric vector
-#' @param by is a numeric vector of length `val`
 #' @param ln is an integer
-#' @return values of `val` at cdf of `val` with respect to `by`
+#' @return values of `val` at cdf of `val`
 #' @export
-val_by_cdf <- function(vals, by = vals, ln = 100) {
+val_by_cdf <- function(vals, ln = 100) {
   vals <- sort(vals)
-  vec <- to_cdf(normalize(vals), by = by)
+  vec <- emp_cdf(vals)[,2]
   val <- 0
   for (i in 1:ln) {
     val[i] <- max(vals[vec <= i/ln])

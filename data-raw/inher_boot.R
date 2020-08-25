@@ -38,7 +38,14 @@ index <- char_pmfs %>% rownames %>% as.numeric %>% sort
 ff_ranks <- rank_list('FF')
 ff_cl <- convo_list(ff_ranks)
 ff_trc <- lapply(ff_cl, function(a) trunc_list(a, index))
-ff_pmf <- to_mat(ff_trc) %>% rowSums %>% normalize
+ff_trc <- lapply(ff_trc, rack)
+ff_pmf <- ff_trc[[1]]
+
+for (i in 2:3) {
+  ff_pmf <- cbind(ff_pmf, ff_trc[[i]])
+}
+
+ff_pmf <- ff_pmf %>% rowSums %>% normalize
 ff_cdf <- ff_pmf %>% to_cdf
 ff_exc <- ff_pmf %>% to_exceed
 
@@ -53,7 +60,14 @@ index <- char_pmfs %>% rownames %>% as.numeric %>% sort
 fg_ranks <- rank_list('FG')
 fg_cl <- convo_list(fg_ranks)
 fg_trc <- lapply(fg_cl, function(a) trunc_list(a, index))
-fg_pmf <- to_mat(fg_trc) %>% rowSums %>% normalize
+fg_trc <- lapply(fg_trc, rack)
+fg_pmf <- fg_trc[[1]]
+
+for (i in 2:4) {
+  fg_pmf <- cbind(fg_pmf, fg_trc[[i]])
+}
+
+fg_pmf <- fg_pmf %>% rowSums %>% normalize
 fg_cdf <- fg_pmf %>% to_cdf
 fg_exc <- fg_pmf %>% to_exceed
 
@@ -62,7 +76,6 @@ usethis::use_data(fg_pmf, overwrite = T)
 usethis::use_data(fg_cdf, overwrite = T)
 usethis::use_data(fg_exc, overwrite = T)
 
-plot(ff_cdf)
 
 # bootstrap cis on inherited age
 df_bl <- boot_ids(10000, df_ranks)
@@ -78,6 +91,8 @@ usethis::use_data(fg_bl)
 
 begin_og <- Sys.time()
 
+setwd('/home/crumplecup/work/boot/')
+library(magrittr)
 index <- sort(as.numeric(rownames(char_pmfs)))
 ff_c1 <- convo_list(ff_bl[[1]])
 save(ff_c1, file = 'ff_c1.rda', overwrite = T)
@@ -88,6 +103,7 @@ ff_ta <- lapply(ff_t1, rack) %>% rack
 save(ff_ta, file = 'ff_ta.rda', overwrite = T)
 rm(ff_t1, ff_ta)
 
+begin <- Sys.time()
 ff_c2 <- convo_list(ff_bl[[2]])
 save(ff_c2, file = 'ff_c2.rda', overwrite = T)
 ff_t2 <- lapply(ff_c2, function(a) trunc_list(a, index))
@@ -96,7 +112,10 @@ rm(ff_c2)
 ff_tb <- lapply(ff_t2, rack) %>% rack
 save(ff_tb, file = 'ff_tb.rda', overwrite = T)
 rm(ff_t2, ff_tb)
+end <- Sys.time()
+end - begin
 
+begin <- Sys.time()
 ff_c3 <- convo_list(ff_bl[[3]])
 save(ff_c3, file = 'ff_c3.rda', overwrite = T)
 ff_t3 <- lapply(ff_c3, function(a) trunc_list(a, index))
@@ -105,6 +124,8 @@ rm(ff_c3)
 ff_tc <- lapply(ff_t3, rack) %>% rack
 save(ff_tc, file = 'ff_tc.rda', overwrite = T)
 rm(ff_t3, ff_tc)
+end <- Sys.time()  # Time difference of 59.02757 mins
+end - begin
 
 end_og <- Sys.time()
 
@@ -149,10 +170,21 @@ ff_cdfs_cis <- apply(ff_cdfs, 1, get_cis)
 ff_excs <- 1 - ff_cdfs
 ff_excs_cis <- apply(ff_excs, 1, get_cis)
 
+setwd('/home/crumplecup/work/muddier/')
+usethis::use_data(ff_pmfs, overwrite = T)
+usethis::use_data(ff_cdfs, overwrite = T)
+usethis::use_data(ff_cdfs_cis, overwrite = T)
+usethis::use_data(ff_excs, overwrite = T)
+usethis::use_data(ff_excs_cis, overwrite = T)
+
+
 # fluvial gravels bootstrap
 
 begin <- Sys.time()
 
+setwd('/home/crumplecup/work/boot/')
+library(magrittr)
+index <- char_pmfs %>% rownames %>% as.numeric %>% sort
 fg_c1 <- convo_list(fg_bl[[1]])
 save(fg_c1, file = 'fg_c1.rda')
 fg_t1 <- lapply(fg_c1, function(a) trunc_list(a, index))
@@ -306,7 +338,8 @@ for (i in 1:nrow(fg_pmfs))  {
 
 save(fg_pmfs_cis, file = 'fg_pmfs_cis.rda')
 
-
+setwd('/home/crumplecup/work/boot/')
+library(magrittr)
 load('fg_t1.rda')
 load('fg_t2.rda')
 load('fg_t3.rda')
@@ -329,10 +362,12 @@ fg_cdfs_cis <- apply(fg_cdfs, 1, get_cis)
 fg_excs <- 1 - fg_cdfs
 fg_excs_cis <- apply(fg_excs, 1, get_cis)
 
+
+
 setwd('/home/crumplecup/work/muddier')
-usethis::use_data(fg_pmfs_cis)
-usethis::use_data(fg_cdfs_cis)
-usethis::use_data(fg_excs_cis)
+usethis::use_data(fg_pmfs_cis, overwrite = T)
+usethis::use_data(fg_cdfs_cis, overwrite = T)
+usethis::use_data(fg_excs_cis, overwrite = T)
 
 
 # convert fluvial gravel pmfs to cdfs

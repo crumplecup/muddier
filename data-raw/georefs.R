@@ -13,7 +13,7 @@ kn_vol <- fread('kn_vol.csv')
 br_vol <- fread('bear.csv')
 cd_vol <- fread('cedar.csv')
 hf_vol <- fread('hoffman_sedvol.csv')
-radio <- fread('radiocarbon.csv')
+radio <- fread('radio1.csv')
 cd_lng <- fread('cedar_long.csv')
 gr_vol <- read.csv('grc_vol.csv', skipNul = TRUE)
 
@@ -465,16 +465,16 @@ writeOGR(creek_transects, work_dir, 'creek_transects', driver = 'ESRI Shapefile'
 
 # radiocarbon georefs
 
-radio <- radio[,-5]
-
 # bear creek subset
-bear_radio <- radio[radio$location %in% c('BCL', 'BCU'), ]
-bear_radio <- bear_radio[order(bear_radio$distance_m),]
+bear_radio <- radio[grep('BC', radio$sid), ]
+bear_radio <- bear_radio[order(as.numeric(bear_radio$distance_m)),]
 
-bear_radio_out <- hip_to_out(bear_radio$distance_m, bear_tribs$lanc_hip,
+bear_radio_out <- hip_to_out(as.numeric(bear_radio$distance_m), bear_tribs$lanc_hip,
                        bear_tribs$ToMouth_km * 1000, bear_tribs$out_hip)
 
 bear_radio_ids <- snap_to_node(bear_radio_out, bear_nodes$ToMouth_km * 1000, bear_nodes$NODE_ID)
+bear_radio_ids[14] <- bear_radio_ids[14] + 1
+
 
 bear_radio$node_ids <- bear_radio_ids
 bear_radio$creek_name <- 'bear'
@@ -496,14 +496,28 @@ cedar_radio$creek_name <- 'cedar'
 
 
 # knowles creek subset
-knowles_radio <- radio[radio$location %in% c('KCU', 'KCM', 'KCL'),]
-knowles_radio <- knowles_radio[order(knowles_radio$distance_m),]
+knowles_radio <- radio[c(
+  grep('DFK', radio$sid),
+  grep('UK', radio$sid),
+  grep('LK', radio$sid),
+  grep('Dam', radio$sid)
+)]
 
-knowles_radio_out <- hip_to_out(knowles_radio$distance_m, landmarks$hip,
+knowles_radio$distance_m[knowles_radio$distance_m == "-200 trib'"] <- -200
+knowles_radio$distance_m[knowles_radio$distance_m == '204 trib'] <- 204
+knowles_radio$distance_m[knowles_radio$distance_m == 'k38 (TRIB) - LB of MS'] <- 0
+knowles_radio$distance_m[205:213] <- -250
+knowles_radio$distance_m[214:223] <- -410
+
+knowles_radio <- knowles_radio[order(as.numeric(knowles_radio$distance_m)),]
+
+knowles_radio_out <- hip_to_out(as.numeric(knowles_radio$distance_m), landmarks$hip,
                                 knowles_tribs$ToMouth_km * 1000, landmarks$outhip)
 
 knowles_radio_ids <- snap_to_node(knowles_radio_out, knowles_nodes$ToMouth_km * 1000,
                                   knowles_nodes$NODE_ID)
+knowles_radio_ids[12] <- knowles_radio_ids[12] + 1
+knowles_radio_ids[13] <- knowles_radio_ids[13] + 1
 
 knowles_radio$node_ids <- knowles_radio_ids
 knowles_radio$creek_name <- 'knowles'
@@ -511,7 +525,7 @@ knowles_radio$creek_name <- 'knowles'
 
 # combine subsets into creeks object
 
-creeks_radio <- rbind(bear_radio, rbind(cedar_radio, knowles_radio))
+creeks_radio <- rbind(bear_radio, knowles_radio)
 
 setwd('/home/crumplecup/work/muddier')
 usethis::use_data(creeks_radio, overwrite = T)
