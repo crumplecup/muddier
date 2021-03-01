@@ -4,8 +4,16 @@
 \alias{cor_creeks}
 \title{cor_creeks}
 \usage{
-cor_creeks(var1, var2, creeks, creek_labs, labs = c("var1", "var2"),
-  cols = length(creek_labs), leg_pos = "topleft", a = 0.33)
+cor_creeks(
+  var1,
+  var2,
+  creeks,
+  creek_labs,
+  labs = c("var1", "var2"),
+  cols = length(creek_labs),
+  leg_pos = "topleft",
+  a = 0.33
+)
 }
 \arguments{
 \item{var1}{is a numeric vector}

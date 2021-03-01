@@ -4,8 +4,12 @@
 \alias{convo_rank}
 \title{convolve by rank}
 \usage{
-convo_rank(ranks, pmfs = char_pmfs, vals = as.numeric(colnames(pmfs)),
-  dat = charcoal)
+convo_rank(
+  ranks,
+  pmfs = char_pmfs,
+  vals = as.numeric(colnames(pmfs)),
+  dat = charcoal
+)
 }
 \arguments{
 \item{ranks}{is a vector of ranks (element of rank list)}

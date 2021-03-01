@@ -212,6 +212,31 @@ bin_weights <- function(num, den, by, bins = 10)  {
 }
 
 
+#' cdf_gof
+#'
+#' compares two cdfs for goodness of fit, returns K-S stat and kuiper stat
+#'
+#' @param ob1 is a cdf, a numeric vector
+#' @param ob2 is a cdf, a numeric vector
+#' @return the k-s stat and kuiper stat
+#' @export
+
+cdf_gof <- function(ob1, ob2)  {
+  vals <- sort(unique(c(ob1, ob2)))
+  c1 <- 0
+  c2 <- 0
+  for (i in seq_along(vals)) {
+    c1[i] <- length(ob1[ob1 <= vals[i]]) / length(ob1)
+    c2[i] <- length(ob2[ob2 <= vals[i]]) / length(ob2)
+  }
+  ks <- max(abs(c1 - c2))
+  kp1 <- max(c1 - c2)
+  kp2 <- max(c2 - c1)
+  kp <- kp1 + kp2
+  return(data.frame(ks = ks, kp = kp))
+}
+
+
 
 #' cor_creeks
 #'
@@ -366,6 +391,19 @@ fit_bins <- function(dat, ids, bins,
   return(list(times, fits, coefs))
 }
 
+
+#' focus
+#'
+#' frame extent of data via logical test of index
+#'
+#' @param test is a logical test length of nrow(`df`)
+#' @param df is a dataframe
+#' @return first and second columns min and max
+#' @export
+focus <- function(test, df) {
+  sub <- df[test, 1:2]
+  unlist(apply(sub, 2, function(x) quantile(x)[c(1,5)]))
+}
 
 
 #' get_form

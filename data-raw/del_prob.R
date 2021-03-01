@@ -105,7 +105,8 @@ setwd('/home/crumplecup/work/')
 png('wt_dp1.png', height = 17, width = 23, units = 'cm', res = 300)
 plot(emp_cdf(crks$dp)[,1], fx, type = 'l', lwd = 3, col = get_palette('ocean', .7),
      xlab = 'MB Delivery Probability Index', ylab = 'Relative Density of Debris Flows',
-     main = 'Fig. A', log = 'x')
+     log = 'x')
+points(emp_cdf(crks$dp)[,1], fx, col = get_palette('charcoal', .7))
 dev.off()
 
 png('wt_dp2.png', height = 17, width = 23, units = 'cm', res = 300)

@@ -1,6 +1,8 @@
 # Functions for Deriving Inherited Age Distributions
 
 
+
+
 #' bin by
 #'
 #' Divides a vector by length into bins, takes the sum of a corresponding variable.
@@ -567,6 +569,9 @@ rank_list <- function(ftype, dat = charcoal, min_count = 3)  {
 
 
 
+
+
+
 #' sum_pmfs add pmfs together and returns a normalized sum
 #'
 #' Given a list of numeric pmfs (lis) and an integer representing the length
@@ -584,6 +589,22 @@ sum_pmfs <- function(lis,len)  {
   mat / sum(mat)
 }
 
+
+#' timer
+#'
+#' wrapper for expressions to measure time to compute
+#'
+#' @param exp is an expression
+#' @param msg is a string allowing a customizable message for output
+#' @return prints the time elapsed after expression computes with `msg`
+#' @export
+
+timer <- function(exp, msg = 'time elapsed: ') {
+  begin <- Sys.time()
+  exp
+  end <- Sys.time()
+  print(paste0(msg, end - begin))
+}
 
 
 
@@ -674,6 +695,7 @@ to_pmf <- function(cdf)  {
 #' @param n is an integer specifying the number of interations in the loop
 #' @param begin is a time object from a call to Sys.time()
 #' @return prints percent complete and time remaining estimate to console
+#' @export
 
 tracker <- function(i, n, begin) {
   now <- Sys.time()

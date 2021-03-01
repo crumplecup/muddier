@@ -4,8 +4,7 @@
 \alias{hipchain}
 \title{hipchain}
 \usage{
-hipchain(pt, dist, inc = 10, chan = flowline, us = T,
-  filter = 4000)
+hipchain(pt, dist, inc = 10, chan = flowline, us = T, filter = 4000)
 }
 \arguments{
 \item{pt}{is a coordinate pair}

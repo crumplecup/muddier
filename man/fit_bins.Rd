@@ -4,8 +4,7 @@
 \alias{fit_bins}
 \title{fit_bins}
 \usage{
-fit_bins(dat, ids, bins, dist = "exp",
-  index = as.numeric(rownames(char_pmfs)))
+fit_bins(dat, ids, bins, dist = "exp", index = as.numeric(rownames(char_pmfs)))
 }
 \arguments{
 \item{dat}{is a numeric matrix of pmfs (pmf, samples)}
