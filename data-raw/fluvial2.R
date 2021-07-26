@@ -1691,16 +1691,46 @@ plot(emp_cdf(predict(gmod, newdata = data.frame(b = surf)) - mass_rem))
 st_st <- pcdf[pcdf[,1] <= 4.69, ]
 st_st[st_st[,1] > 4.68, 2]
 
-df_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_df_ks.csv')
+df_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_gr_kp.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_gr_ks.csv')
+gr_trans_kp <- data.table::fread('/home/erik/output/transits_cdf_gr_kp.csv')
+gr_trans_ch <- data.table::fread('/home/erik/output/transits_cdf_gr_ch.csv')
 df_trans_ks <- data.table::fread('/home/erik/output/debris_flow_deposits_cdf.csv')
 
+png('gravels_fit.png', height = 17, width = 21, units = 'cm', res = 300)
 magicaxis::magplot(emp_cdf(charcoal$mn[charcoal$facies == 'FF'] + 50), pch = 20, col = get_palette('coral'),
-                   xlab = 'charcoal age', ylab = 'CDF of samples', xlim = c(0, 17000))
+                   xlab = 'Charcoal Age [y]', ylab = 'CDF of samples', xlim = c(0, 17000))
 points(emp_cdf(debris_flows), pch = 20, col = get_palette('hardwood'))
 points(emp_cdf(charcoal$mn[charcoal$facies == 'FG'] + 50), pch = 20, col = get_palette('charcoal'))
 
-lines(0:20000, unlist(df_trans_ks))
+lines(0:20000, cumsum(unlist(gr_trans_ks)), lwd = 2.5, col = get_palette('crimson', .7))
+lines(0:20000, cumsum(unlist(gr_trans_kp)), lwd = 2.5, col = get_palette('violet', .7))
+lines(0:20000, cumsum(unlist(gr_trans_ch)), lwd = 2.5, col = get_palette('gold', .7))
+legend('bottomright', legend = c('Debris-Flows', 'Gravels', 'Fines', 'Kolmogorov-Smirnov', 'Kuiper'),
+       lty = c(NA, NA, NA, 1, 1), lwd = c(NA, NA, NA, 2, 2),
+       pch = c(20, 20, 20, NA, NA), col = get_palette(c('hardwood', 'charcoal', 'coral', 'crimson', 'violet'), .9))
+dev.off()
+
+
 head(df_trans_ks)
 df_trans_ks[df_trans_ks < 0] <- 0
 write.csv(df_trans_ks, 'gravels_transits_ad.csv', row.names = F)
+
+
+
+png('pebble_counts.png', height = 17, width = 21, units = 'cm', res = 300)
+magicaxis::magplot(emp_cdf(pebs$b), log = 'x', pch = 20,
+                   col = get_palette('ocean'), xlim = c(min(pebs$b), max(surf)),
+                   xlab = 'b-axis width [mm]',
+                   ylab = 'CDF of samples')
+points(emp_cdf(surf), pch = 20, col = get_palette('crimson'))
+abline(v = median(pebs$b), lty = 2)
+text(9.5, 0.45, labels = paste0('D50s = ', round(median(pebs$b), 2), ' g'))
+abline(v = median(surf), lty = 2)
+text(65, 0.45, labels = paste0('D50 = ', round(median(surf), 2), ' g'))
+legend('bottomright', legend = c('Surface', 'Subsurface', 'Median'),
+       pch = c(20, 20, NA), lty = c(NA, NA, 2), lwd = c(NA, NA, 1),
+       col = get_palette(c('crimson', 'ocean', 'charcoal'), .9))
+dev.off()
+
 

@@ -3,7 +3,37 @@ library(parallel)
 options(mc.cores=parallel::detectCores())
 setwd('/media/erik/catacomb/research')
 
+debris_flows <- charcoal$mn[charcoal$facies == 'DF'] + 50
+gravels <- charcoal$mn[charcoal$facies == 'FG'] + 50
+fines <- charcoal$mn[charcoal$facies == 'FF'] + 50
 
+# debris-flow pmf and index
+index <- char_pmfs %>% rownames %>% as.numeric %>% rev
+dfc <- emp_cdf(charcoal$mn[charcoal$facies == 'DF'])
+dfi <- dfc[ , 1]
+dfi <- dfi + 50
+dfp <- to_pmf(dfc[ , 2])
+
+# gravels pmf and index
+grc <- emp_cdf(gravels)
+gri <- grc[ , 1]
+grp <- to_pmf(grc[ , 2])
+
+
+fines_synth <- function(capture, storage, turnover) {
+  ages <- sample(
+    c(sample(dfi, length(dfi), replace = TRUE, prob = dfp),
+      sample(gri, length(gri), replace = TRUE, prob = grp))
+    )
+  storage_pmf <- fish(storage, index / turnover, 1)
+  storage_pmf <- storage_pmf / sum(storage_pmf)
+  for (i in 1:length(dfi)) {
+    if (runif(1) <= capture) {
+      ages[i] <- ages[i] + sample(index, 1, prob = storage_pmf)
+    }
+  }
+  ages
+}
 
 gravel_synth <- function(capture, storage, turnover) {
   ages <- sample(dfi, length(dfi), replace = TRUE, prob = dfp)
@@ -31,18 +61,20 @@ gof <- function(synth, obs) {
   c2 <- 0
   c2l <- 0
   k1 <- 0
+  chi <- 0
   for (i in seq_along(vals)) {
     c1l[i] <- length(synth[synth <= vals[i]])
     c1[i] <-  c1l[i] / length(synth)
     c2l[i] <- length(obs[obs <= vals[i]])
     c2[i] <-  c2l[i] / length(obs)
+    chi[i] <- (c1l[i] - c2l[i])^2 / c2l[i]
     k1[i] <- length(kobs[kobs <= vals[i]]) / length(kobs)
   }
   ks <- max(abs(c1 - c2))
   kp1 <- max(c1 - c2)
   kp2 <- max(c2 - c1)
   kp <- kp1 + kp2
-  ch <- sum((c1 - c2)^2 / c2)
+  ch <- sum(chi[chi != Inf])
   adi <- 0
   for (i in 1:(k-1)) {
     xl <- length(synth[synth <= kobs[i]])
@@ -52,8 +84,6 @@ gof <- function(synth, obs) {
   return(c(ad, ch, kp, ks))
 }
 
-debris_flows <- charcoal$mn[charcoal$facies == 'DF'] + 50
-gravels <- charcoal$mn[charcoal$facies == 'FG'] + 50
 
 gravel_fit_n <- function(n, capture, storage, turnover) {
   mat <- matrix(0, n, 4)
@@ -61,15 +91,30 @@ gravel_fit_n <- function(n, capture, storage, turnover) {
   apply(mat, 1, mean)
 }
 
-gravel_fit_n(10, .12, .12, 208)
+fines_fit_n <- function(n, capture, storage, turnover) {
+  mat <- matrix(0, n, 4)
+  mat <- apply(mat, 1, function(x) gof(fines_synth(capture, storage, turnover), fines))
+  apply(mat, 1, mean)
+}
 
-gravel_fit <- function(batch = 10, n = 10, turnover, max_cap = 1, max_stor = 1) {
+
+gravel_fit_n(10, .12, .12, 208)
+fines_fit_n(10, .12, .12, 208)
+
+gravel_fit <- function(batch = 10, n = 10, turnover, max_cap = 1, max_stor = 1, fines = F) {
   capture_rates <- runif(batch, 0, max_cap)
   storage_rates <- runif(batch, 0, max_stor)
-  turnovers <- runif(batch, 191, 318)
-  mat <- t(parallel::mcmapply(function(a,b,c,d,e) gravel_fit_n(a, b, c, d),
-                  b = capture_rates, c = storage_rates, d = turnovers,
-                  MoreArgs = list(a = n)))
+  turnovers <- runif(batch, 175, 350)
+  mat <- 0
+  if (fines) {
+    mat <- t(parallel::mcmapply(function(a,b,c,d,e) fines_fit_n(a, b, c, d),
+                                b = capture_rates, c = storage_rates, d = turnovers,
+                                MoreArgs = list(a = n)))
+  } else {
+    mat <- t(parallel::mcmapply(function(a,b,c,d,e) gravel_fit_n(a, b, c, d),
+                                b = capture_rates, c = storage_rates, d = turnovers,
+                                MoreArgs = list(a = n)))
+  }
   data.frame(
     capture = capture_rates,
     storage = storage_rates,
@@ -80,22 +125,83 @@ gravel_fit <- function(batch = 10, n = 10, turnover, max_cap = 1, max_stor = 1) 
     ks = mat[ , 4])
 }
 
+# function to split observations of two predictors into bins
+# returns the mean sd and count of fit for each bin
+bin_dual_stat <- function(pred1, pred2, fit, bins = 10) {
+  # vector of means, sds and counts
+  mns <- 0
+  sds <- 0
+  ns <- 0
+  lwr <- 0
+  upr <- 0
+  # divide range of pred into bins number of steps
+  rng1 <- seq(min(pred1), max(pred1), (max(pred1) - min(pred1)) / bins)
+  rng2 <- seq(min(pred2), max(pred2), (max(pred2) - min(pred2)) / bins)
+  print(length(rng1))
+  print(length(rng2))
+  for (i in 1:bins) {
+    for (j in 1:bins) {
+
+    }
+    # select fits where pred in is range
+    if (i == 1 & j == 1) {
+      bin <- fit[pred1 <= rng1[i] & pred2 <= rng2[j]]
+    } else if (i == 1 & j > 1) {
+      bin <- fit[pred1 <= rng1[i] &
+                   pred2 > rng2[j-1] & pred2 <= rng2[j]]
+    } else if (i > 1 & j == 1) {
+      bin <- fit[pred1 > rng1[i-1] & pred1 <= rng1[i] &
+                   pred2 <= rng2[j]]
+    } else {
+      bin <- fit[pred1 > rng1[i-1] & pred1 <= rng1[i] &
+                   pred2 > rng2[j-1] & pred2 <= rng2[j]]
+    }
+    mns[i] <- mean(bin)
+    sds[i] <- sd(bin)
+    ns[i] <- length(bin)
+    lwr[i] <- mns[i] - 1.96 * (sds[i] / sqrt(ns[i]))
+    upr[i] <- mns[i] + 1.96 * (sds[i] / sqrt(ns[i]))
+  }
+  data.frame(mns = mns, sds = sds, ns = ns, upr = upr, lwr = lwr, rng1 = rng1[1:length(mns)], rng2 = rng2[1:length(mns)])
+}
+
+rec[rec$ch == min(rec$ch), ]
+gr_stats <- bin_dual_stat(rec$capture, rec$storage, rec$ks, 20)[-1, ]
+gr_stats$rng1[gr_stats$lwr <= gr_stats$upr[gr_stats$mns == min(gr_stats$mns)]]
+gr_stats$rng2[gr_stats$lwr <= gr_stats$upr[gr_stats$mns == min(gr_stats$mns)]]
+plot3D::points3D(gr_stats$rng1, gr_stats$rng2, gr_stats$mns)
+
 gravel_fit(10, 10, 208, 0.2, 0.2)
 
-rec <- gravel_fit(10, 1000, 318, 0.2, 0.2)
+rec <- gravel_fit(10, 200, 318, 0.5, 1)
+rec <- gravel_fit(10, 200, 318, 1, 1, fines = T)
 dur <- as.difftime(3, units = 'hours')
 begin <- Sys.time()
 end <- begin + dur
 while (Sys.time() < end) {
-  rec <- rbind(rec, gravel_fit(10, 1000, 318, 0.2, 0.2))
-  save(rec, file = 'gr_1000.rds')
+  rec <- rbind(rec, gravel_fit(10, 200, 318, 1, 1, fines = T))
+  save(rec, file = 'fn_200.rds')
 }
 
 rec[rec$ks == min(rec$ks), ]
 
-plot3D::points3D(rec$capture, rec$storage, rec$ks, ticktype = 'detailed', pch = 20,
+plot3D::points3D(rec$capture, rec$storage, rec$ad, ticktype = 'detailed', pch = 20,
+                 phi = 20, theta = 210,
+                 xlab = 'capture rate', ylab = 'storage rate')
+
+plot3D::points3D(rec$capture, rec$storage, rec$ch, ticktype = 'detailed', pch = 20,
                  phi = 20, theta = 340,
                  xlab = 'capture rate', ylab = 'storage rate')
+
+plot3D::points3D(rec$capture, rec$storage, rec$kp, ticktype = 'detailed', pch = 20,
+                 phi = 20, theta = 310,
+                 xlab = 'capture rate', ylab = 'storage rate')
+
+plot3D::points3D(rec$capture, rec$storage, rec$ks, ticktype = 'detailed', pch = 20,
+                 phi = 20, theta = 310,
+                 xlab = 'capture rate', ylab = 'storage rate')
+
+magicaxis::magplot(rec$storage, rec$ks, pch = 20, col = get_palette('ocean'))
 
 sub <- rec
 subad <- sub[sub$turnover > 300 , ]
@@ -271,27 +377,9 @@ pex_ks <- (fish(pf_ks^trap, t, 1)/sum(fish(pf_ks^trap,t,1)))
 
 
 
-# debris-flow pmf and index
-index <- char_pmfs %>% rownames %>% as.numeric %>% rev
-dfc <- emp_cdf(charcoal$mn[charcoal$facies == 'DF'])
-dfi <- dfc[ , 1]
-dfi <- dfi + 50
-dfp <- to_pmf(dfc[ , 2])
-
-plot(index/tp_ad)
 
 
 
 
-gr_fit <- gravel_fit(n = 10, win = .33)
-gr_ad <- gr_fit[[1]]
-gr_ch <- gr_fit[[2]]
-gr_kp <- gr_fit[[3]]
-gr_ks <- gr_fit[[4]]
 
-fn_fit <- fine_fit(mod = .4, hill_rt = 0.0)
-fn_ad <- fn_fit[[1]]
-fn_ch <- fn_fit[[2]]
-fn_kp <- fn_fit[[3]]
-fn_ks <- fn_fit[[4]]
 

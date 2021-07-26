@@ -538,7 +538,7 @@ dev.off()
 
 # function to split observations of a predictor into bins
 # returns the mean sd and count of fit for each bin
-bin_stat <- function(pred, fit, bins = 10) {
+bin_stat <- function(pred1, pred2, fit, bins = 10) {
   # vector of means, sds and counts
   mns <- 0
   sds <- 0
@@ -559,6 +559,8 @@ bin_stat <- function(pred, fit, bins = 10) {
   }
   data.frame(mns = mns, sds = sds, ns = ns, rng = rng[1:length(mns)])
 }
+
+
 
 ks_mns <- bin_stat(rec$input, rec$ks, 200)
 ks_lwr <- ks_mns$mns - 1.96 * (ks_mns$sds / sqrt(ks_mns$ns))
