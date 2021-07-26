@@ -3,35 +3,75 @@ library(magrittr)
 library(sp)
 library(muddier)
 
+# screen out older samples from sites with multiples
+# node ids of sites with charcoal samples
 site <- creeks_radio$node_ids
+# count number of samples at each site
 counts <- 0
 for (i in seq_along(site)) {
   counts[i] <- length(site[site == site[i]])
 }
+# site ids with multiple samples
 mults <- site[counts > 1] %>% factor %>% levels
-
+# subset creek nodes with single samples only
 crks <- creeks_radio[!creeks_radio$node_ids %in% mults, ]
-
+# loop through sites with multiples and add the youngest from each
 for (i in seq_along(mults)) {
   sub <- creeks_radio[creeks_radio$node_ids == mults[i], ]
   crks <- rbind(crks, sub[1,])
 }
 
+# table of multiple sites
+site_ct <- charcoal[, .N, by = family]
+char <- charcoal
+char$ct <- 0
+for (i in 1:nrow(char)) {
+  char$ct[i] <- site_ct$N[site_ct$family == char$family[i]]
+}
+site_ct[site_ct$N > 2, ]
+png('site_count.png', height = 17, width = 21, units = 'cm', res = 300)
+plot(emp_cdf(char$ct), xlim = c(1, max(char$ct)), ylim = c(0, 1), type = 'l',
+     col = get_palette('ocean', .7), lwd = 2,
+     xlab = 'samples per site', ylab = 'CDF of samples')
+points(emp_cdf(char$ct), pch = 20, col = get_palette('charcoal', .5))
+dev.off()
+
+site_ct$N[site_ct$N > 2] %>% sum
+site_ct$N[site_ct$N > 1] %>% sum
+
+index <- char_pmfs %>% rownames %>% as.numeric %>% rev
+png('inherited_age.png', height = 17, width = 21, units = 'cm', res = 300)
+plot(index, df_cdf, log = 'x', type = 'l', lwd = 2, col = get_palette('charcoal', .7),
+     xlab = 'inherited age [years]', ylab = 'CDF of samples', ylim = c(0.1,1))
+lines(index, fg_cdf, lwd = 2, col = get_palette('ocean', .7))
+lines(index, ff_cdf, lwd = 2, col = get_palette('crimson', .7))
+legend('topleft', legend = c('debris flows', 'fines', 'gravels'),
+       fill = get_palette(c('charcoal', 'crimson', 'ocean'), .9))
+dev.off()
+
+# remove samples from the cedar fan
 crks <- crks[crks$creek_name != 'cedar', ]
 
 
+# add optimized MB delivery probability
+# add MB delivery probability
+crks_so <- rater1(creeks, 0.7, 0.7)
 crks$dp <- 0
+crks$odp <- 0
+
 for (i in seq_along(crks$dp)) {
   crks$dp[i] <- creeks$DebrisFlow[creeks$NODE_ID == crks$node_ids[i]]
+  crks$odp[i] <- crks_so$dp[crks_so$NODE_ID == crks$node_ids[i]]
 }
 
+# subset debris-flow deposits
 df_crks <- crks[crks$stratigraphy == 'DF', ]
 # cdf_crks <- to_cdf(crks$dp)
 
 # debris-flow deposit density
 rho_df <- nrow(df_crks) / nrow(crks)
 
-
+# takes pmf, returns cdf binned
 pct_cdf <- function(vec, by = vec, ln = 100) {
   vec <- obs_to_cdf(normalize(vec), by = by)
   n <- length(vec)
@@ -42,7 +82,7 @@ pct_cdf <- function(vec, by = vec, ln = 100) {
   return(cdf)
 }
 
-
+# takes pmf, returns cdf
 obs_to_cdf <- function(pmf, by = pmf)  {
   cdf <- array(0,length(pmf))
   if (sum(pmf) != 1) pmf <- normalize(pmf)
@@ -54,24 +94,45 @@ obs_to_cdf <- function(pmf, by = pmf)  {
   cdf
 }
 
-
+# cdf of debris-flow deposits
 dfcdf <- obs_to_cdf(df_crks$dp)
+# cdf of total deposits
 crkcdf <- obs_to_cdf(crks$dp)
-
+# match cdf length of total deposits to cdf of debris-flows
 pct_crkcdf <- pct_cdf(crks$dp, ln = length(dfcdf))
 
+# log both cdfs to fit to model
 lg_cdf_df <- log(dfcdf)
 lg_cdf_crks <- log(pct_crkcdf)
 
-lmod <- lm(lg_cdf_df ~ lg_cdf_crks)
-lpred <- predict(lmod, data.frame(lg_cdf_crks = log(cdf_crks)))
+lmod <- lm(log(dfcdf) ~ log(pct_crkcdf))
+lpred <- predict(lmod, data.frame(pct_crkcdf = crkcdf))
 epred <- exp(lpred)
 
 edif <- cdf_dif(epred)
-ddif <- cdf_dif(cdf_crks)
+ddif <- cdf_dif(crkcdf)
 fx <- edif / ddif * (1/rho_df)
 
 dp_vals <- sort(crks$dp)
+plot(dp_vals, fx)
+
+# same for optimized delivery probability
+# cdf of debris-flow deposits
+odfcdf <- obs_to_cdf(df_crks$odp)
+
+# match cdf length of total deposits to cdf of debris-flows
+opct_crkcdf <- pct_cdf(crks$odp, ln = length(odfcdf))
+
+olmod <- lm(log(odfcdf) ~ log(opct_crkcdf))
+olpred <- predict(olmod, data.frame(opct_crkcdf = crkcdf))
+oepred <- exp(olpred)
+
+oedif <- cdf_dif(oepred)
+ofx <- oedif / ddif * (1/rho_df)
+
+odp_vals <- sort(crks$odp)
+plot(odp_vals, ofx)
+
 
 df <- data.frame(df = lg_cdf_df, crk = lg_cdf_crks)
 
@@ -102,6 +163,33 @@ plot(emp_cdf(crks$dp)[,1], fx, type = 'l', lwd = 3, col = get_palette('ocean', .
      xlab = 'MB Delivery Probability Index', ylab = 'Relative Density of Debris Flows',
      log = 'x')
 points(emp_cdf(crks$dp)[,1], fx, col = get_palette('charcoal', .7))
+dev.off()
+
+s <- seq(0, 3.5, 0.1)
+lines(s, s * (0.035 / 3.5))
+lines(df_wt)
+
+s <- seq(0, 1, 0.1)
+setwd('/media/erik/catacomb/research')
+png('delivery_wgt.png', height = 20, width = 24, units = 'cm', res = 300)
+plot(s, s, type = 'l', lwd = 2, lty = 1, col = get_palette('charcoal'),
+     xlab = 'CDF of total deposits',
+     ylab = 'CDF of debris-flow deposits')
+lines(pct_crkcdf, dfcdf, lwd = 1, lty = 2, col = get_palette('ocean'))
+points(pct_crkcdf, dfcdf, pch = 20, col = get_palette('ocean'))
+lines(opct_crkcdf, odfcdf, lwd = 1, lty = 2, col = get_palette('crimson'))
+points(opct_crkcdf, odfcdf, pch = 20, col = get_palette('crimson'))
+legend('topleft', legend = c('Unweighted', 'MB predictor', 'Optimized predictor'),
+       fill = get_palette(c('charcoal', 'ocean', 'crimson'), .8))
+dev.off()
+
+png('weighting_function_df.png', height = 20, width = 24, units = 'cm', res = 300)
+plot(df_wt$dp, df_wt$wt, type = 'l', lwd = 3, col = get_palette('charcoal'),
+     xlab = 'delivery probability',
+     ylab = 'weighting function', log = 'x')
+points(df_wt$dp, df_wt$wt, pch = 20, col = get_palette('ocean'))
+legend('topleft', legend = c('observed', 'fit'),
+       fill = get_palette(c('ocean', 'charcoal'), .8))
 dev.off()
 
 
@@ -162,6 +250,8 @@ sub$wt_cols[sub$wt > 0.1 & sub$wt <= 1] <- get_palette('sky', .075)
 sub$wt_cols[sub$wt > 1 & sub$wt <= 2] <- get_palette('gold', .075)
 sub$wt_cols[sub$wt > 2 & sub$wt <= 3] <- get_palette('rose', .075)
 sub$wt_cols[sub$wt > 3] <- get_palette('crimson', .075)
+
+rgdal::writeOGR(sub, 'creeks.shp', 'creeks', driver = 'ESRI Shapefile')
 
 library(raster)
 png('kn_wt.png',

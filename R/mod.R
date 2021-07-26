@@ -1440,6 +1440,7 @@ rater1 <- function(so, gi, go, sa = sa_nodes) {
   ti <- ti_ave * dp_wt * ca_wt / exp(pwr_k)
   ti[ti <= 0] <- min(ti[ti > 0])
   ti <- ti * sum(ti_ave * nrow(so)) / sum(ti)
+  so$k <- pwr_k
   so$dp <- dp
   so$ri <- ti
   so$ro <- to
