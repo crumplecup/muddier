@@ -408,17 +408,17 @@ ls_cy_bp <- ls_cy_bd / ls_cy_tl
 ls_cy_bca <- ls_cy$ca[!is.na(ls_cy$total)] * tokm
 
 png('bedload_fraction.png', height = 17, width = 21, units = 'cm', res = 300)
-plot(ls_an_tl, ls_an_bp, log = 'x',
-     xlab = 'flux [Mg km^-2]',
-     ylab = 'bedload fraction',
+magicaxis::magplot(ls_an_tl, ls_an_bp, log = 'x',
+     xlab = 'Sediment Flux [Mg km^-2]',
+     ylab = 'Bedload Fraction',
      pch = 20, col = get_palette('ocean'))
 points(ls_cy_tl, ls_cy_bp, pch = 20, col = get_palette('crimson', .5))
 abline(h = mean(ls_cy_bp), lty = 2, col = get_palette('crimson', .9))
 abline(h = mean(ls_an_bp), lty = 2, col = get_palette('ocean', .5))
-abline(h = 1 - .7226, lty = 2, col = get_palette('gold', .9))
-legend('bottomright', legend = c('Andrews EF', 'Coyote Creek', 'study area (predicted)', 'mean'),
-       pch = c(20, 20, 20, NA), lty = c(NA, NA, NA, 2),
-       col = get_palette(c('ocean', 'crimson', 'gold', 'charcoal'), .75))
+# abline(h = 1 - .7226, lty = 2, col = get_palette('gold', .9))
+legend('bottomright', legend = c('Andrews EF', 'Coyote Creek', 'mean'),
+       pch = c(20, 20, NA), lty = c(NA, NA, 2),
+       col = get_palette(c('ocean', 'crimson', 'charcoal'), .75))
 text(8500, .21, labels = 'from Larson & Sidle 1980')
 dev.off()
 

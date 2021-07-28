@@ -47,6 +47,13 @@ gravel_synth <- function(capture, storage, turnover) {
   ages
 }
 
+# poisson distribution
+# given a rate, time and number of events
+# returns p(k) distribution
+fish <- function(rt, t, k) {
+  (rt*t)^k*exp(-rt*t) / factorial(k)
+}
+
 plot(emp_cdf(gravel_synth(.12,.12,318)))
 
 
@@ -84,27 +91,51 @@ gof <- function(synth, obs) {
   return(c(ad, ch, kp, ks))
 }
 
+test_fit <- function(fits) {
+  hits <- c(0,0,0,0, 0,0,0,0)
+  # anderson-darling sig thresholds
+  if (fits[1] < 340) hits[1] <- 1
+  if (fits[1] < 250) hits[5] <- 1
+  # chi-squared sig thresholds
+  if (fits[2] < 300) hits[2] <- 1
+  if (fits[2] < 100) hits[6] <- 1
+  # kuiper sig thresholds
+  if (fits[3] < 0.12) hits[3] <- 1
+  if (fits[3] < 0.09) hits[7] <- 1
+  # kolmogorov-smirnov sig thresholds
+  if (fits[4] < 0.10) hits[4] <- 1
+  if (fits[4] < 0.05) hits[8] <- 1
+  hits
+}
 
 gravel_fit_n <- function(n, capture, storage, turnover) {
   mat <- matrix(0, n, 4)
   mat <- apply(mat, 1, function(x) gof(gravel_synth(capture, storage, turnover), gravels))
-  apply(mat, 1, mean)
+  res <- matrix(0, nrow = n, ncol = 8)
+  for (i in 1:n) {
+    res[i, ] <- test_fit(mat[, i])
+  }
+  apply(res, 2, function(x) sum(x) / length(x))
 }
+
+gravel_fit_n(10, .12, .12, 208)
 
 fines_fit_n <- function(n, capture, storage, turnover) {
   mat <- matrix(0, n, 4)
   mat <- apply(mat, 1, function(x) gof(fines_synth(capture, storage, turnover), fines))
-  apply(mat, 1, mean)
+  res <- matrix(0, nrow = n, ncol = 8)
+  for (i in 1:n) {
+    res[i, ] <- test_fit(mat[, i])
+  }
+  apply(res, 2, function(x) sum(x) / length(x))
 }
 
-
-gravel_fit_n(10, .12, .12, 208)
 fines_fit_n(10, .12, .12, 208)
 
-gravel_fit <- function(batch = 10, n = 10, turnover, max_cap = 1, max_stor = 1, fines = F) {
+gravel_fit <- function(batch = 10, n = 10, max_cap = 1, max_stor = 1, fines = F) {
   capture_rates <- runif(batch, 0, max_cap)
   storage_rates <- runif(batch, 0, max_stor)
-  turnovers <- runif(batch, 175, 350)
+  turnovers <- runif(batch, 50, 1500)
   mat <- 0
   if (fines) {
     mat <- t(parallel::mcmapply(function(a,b,c,d,e) fines_fit_n(a, b, c, d),
@@ -119,10 +150,14 @@ gravel_fit <- function(batch = 10, n = 10, turnover, max_cap = 1, max_stor = 1, 
     capture = capture_rates,
     storage = storage_rates,
     turnover = turnovers,
-    ad = mat[ , 1],
-    ch = mat[ , 2],
-    kp = mat[ , 3],
-    ks = mat[ , 4])
+    ad_a = mat[ , 1],
+    ch_a = mat[ , 2],
+    kp_a = mat[ , 3],
+    ks_a = mat[ , 4],
+    ad_b = mat[ , 5],
+    ch_b = mat[ , 6],
+    kp_b = mat[ , 7],
+    ks_b = mat[ , 8])
 }
 
 # function to split observations of two predictors into bins
@@ -132,77 +167,118 @@ bin_dual_stat <- function(pred1, pred2, fit, bins = 10) {
   mns <- 0
   sds <- 0
   ns <- 0
-  lwr <- 0
-  upr <- 0
+  idx1 <- 0
+  idx2 <- 0
+
   # divide range of pred into bins number of steps
   rng1 <- seq(min(pred1), max(pred1), (max(pred1) - min(pred1)) / bins)
   rng2 <- seq(min(pred2), max(pred2), (max(pred2) - min(pred2)) / bins)
-  print(length(rng1))
-  print(length(rng2))
   for (i in 1:bins) {
-    for (j in 1:bins) {
-
-    }
-    # select fits where pred in is range
-    if (i == 1 & j == 1) {
-      bin <- fit[pred1 <= rng1[i] & pred2 <= rng2[j]]
-    } else if (i == 1 & j > 1) {
-      bin <- fit[pred1 <= rng1[i] &
-                   pred2 > rng2[j-1] & pred2 <= rng2[j]]
-    } else if (i > 1 & j == 1) {
-      bin <- fit[pred1 > rng1[i-1] & pred1 <= rng1[i] &
-                   pred2 <= rng2[j]]
+    if (i == 1) {
+      bin <- fit[pred1 <= rng1[i]]
     } else {
-      bin <- fit[pred1 > rng1[i-1] & pred1 <= rng1[i] &
-                   pred2 > rng2[j-1] & pred2 <= rng2[j]]
+      bin <- fit[pred1 > rng1[i-1] & pred1 <= rng1 [i]]
     }
-    mns[i] <- mean(bin)
-    sds[i] <- sd(bin)
-    ns[i] <- length(bin)
-    lwr[i] <- mns[i] - 1.96 * (sds[i] / sqrt(ns[i]))
-    upr[i] <- mns[i] + 1.96 * (sds[i] / sqrt(ns[i]))
+    for (j in 1:bins) {
+      if (j == 1) {
+        jbin <- bin[pred2 <= rng2[j]]
+      } else {
+        jbin <- bin[pred2 > rng2[j-1] & pred2 <= rng2[j]]
+      }
+      mns <- c(mns, mean(jbin[!is.na(jbin)]))
+      sds <- c(sds, sd(jbin[!is.na(jbin)]))
+      ns <- c(ns, length(jbin[!is.na(jbin)]))
+      idx1 <- c(idx1, rng1[i])
+      idx2 <- c(idx2, rng2[j])
+    }
   }
-  data.frame(mns = mns, sds = sds, ns = ns, upr = upr, lwr = lwr, rng1 = rng1[1:length(mns)], rng2 = rng2[1:length(mns)])
+  mns <- mns[-1]
+  sds <- sds[-1]
+  ns <- ns[-1]
+  idx1 <- idx1[-1]
+  idx2 <- idx2[-1]
+
+  lwr <- mns - 1.96 * (sds / sqrt(ns))
+  upr <- mns + 1.96 * (sds / sqrt(ns))
+
+  data.frame(mns = mns, sds = sds, ns = ns, upr = upr, lwr = lwr, rng1 = idx1, rng2 = idx2)
 }
 
+
+gravel_fit(10, 10, 1, 1)
+
+
+load('/home/erik/output/gr_1000.rds')
+rc <- rec
+load('/home/erik/output/gr_1000a.rds')
+rc <- rbind(rc, rec)
+load('gr_1000.rds')
+rc <- rbind(rc, rec)
 rec[rec$ch == min(rec$ch), ]
-gr_stats <- bin_dual_stat(rec$capture, rec$storage, rec$ks, 20)[-1, ]
+(gr_stats <- bin_dual_stat(rec$capture, rec$storage, rec$ks, 20))
+gr_min <- min(gr_stats$mns[!is.na(gr_stats$mns) & gr_stats$mns > 0])
+range(gr_stats$rng1[gr_stats$lwr <= gr_stats$upr[gr_stats$mns == gr_min & !is.na(gr_stats$upr)]
+              & !is.na(gr_stats$lwr) & gr_stats$lwr > 0])
+range(gr_stats$rng2[gr_stats$lwr <= gr_stats$upr[gr_stats$mns == gr_min & !is.na(gr_stats$upr)]
+              & !is.na(gr_stats$lwr) & gr_stats$lwr > 0])
+plot3D::points3D(gr_stats$rng1, gr_stats$rng2, gr_stats$mns)
+
+load('/home/erik/output/fn_1000.rds')
+rc <- rec
+load('/home/erik/output/fn_200.rds')
+rc <- rbind(rc, rec)
+load('fn_200.rds')
+rc <- rbind(rc, rec)
+rec[rec$ks == min(rec$ks), ]
+(gr_stats <- bin_dual_stat(rec$capture, rec$storage, rec$ks, 20)[-1, ])
 gr_stats$rng1[gr_stats$lwr <= gr_stats$upr[gr_stats$mns == min(gr_stats$mns)]]
 gr_stats$rng2[gr_stats$lwr <= gr_stats$upr[gr_stats$mns == min(gr_stats$mns)]]
 plot3D::points3D(gr_stats$rng1, gr_stats$rng2, gr_stats$mns)
 
-gravel_fit(10, 10, 208, 0.2, 0.2)
 
-rec <- gravel_fit(10, 200, 318, 0.5, 1)
-rec <- gravel_fit(10, 200, 318, 1, 1, fines = T)
+
+rec <- gravel_fit(10, 200, 1, 1)
+# rec <- gravel_fit(10, 200, 318, 1, 1, fines = T)
+# load('fn_200.rds')
 dur <- as.difftime(3, units = 'hours')
 begin <- Sys.time()
 end <- begin + dur
 while (Sys.time() < end) {
-  rec <- rbind(rec, gravel_fit(10, 200, 318, 1, 1, fines = T))
-  save(rec, file = 'fn_200.rds')
+  rec <- rbind(rec, gravel_fit(10, 200, 1, 1))
+  save(rec, file = 'gr_200_hits.rds')
 }
 
 rec[rec$ks == min(rec$ks), ]
+rec[rec$kp == min(rec$kp), ]
 
-plot3D::points3D(rec$capture, rec$storage, rec$ad, ticktype = 'detailed', pch = 20,
-                 phi = 20, theta = 210,
+rec[rec$ad_a == max(rec$ad_a), ]
+plot3D::points3D(rec$capture, rec$storage, rec$ad_a, ticktype = 'detailed', pch = 20,
+                 phi = 40, theta = 30,
+                 xlab = 'capture rate', ylab = 'storage rate', zlab = 'ad alpha')
+
+rec[rec$ch_a == max(rec$ch_a), ]
+plot3D::points3D(rec$capture, rec$storage, rec$ch_a, ticktype = 'detailed', pch = 20,
+                 phi = 20, theta = 290,
                  xlab = 'capture rate', ylab = 'storage rate')
 
-plot3D::points3D(rec$capture, rec$storage, rec$ch, ticktype = 'detailed', pch = 20,
-                 phi = 20, theta = 340,
+rec[rec$kp_a == max(rec$kp_a), ]
+plot3D::points3D(rec$capture, rec$storage, rec$kp_a, ticktype = 'detailed', pch = 20,
+                 phi = 30, theta = 310,
                  xlab = 'capture rate', ylab = 'storage rate')
 
-plot3D::points3D(rec$capture, rec$storage, rec$kp, ticktype = 'detailed', pch = 20,
-                 phi = 20, theta = 310,
+rec[rec$ks_a == max(rec$ks_a), ]
+plot3D::points3D(rec$capture, rec$storage, rec$ks_a, ticktype = 'detailed', pch = 20,
+                 phi = 40, theta = 310,
                  xlab = 'capture rate', ylab = 'storage rate')
 
-plot3D::points3D(rec$capture, rec$storage, rec$ks, ticktype = 'detailed', pch = 20,
-                 phi = 20, theta = 310,
-                 xlab = 'capture rate', ylab = 'storage rate')
+magicaxis::magplot(rec$turnover, rec$kp_b, pch = 20, col = get_palette('ocean'),
+                   xlab = 'turnover period [y]', ylab = 'k-s fit')
+abline(v = 191, col = get_palette('violet', .9), lwd = 2)
+abline(v = 208, col = get_palette('crimson', .9), lwd = 2)
+abline(v = 293, col = get_palette('gold', .9), lwd = 2)
+abline(v = 318, col = get_palette('ocean', .9), lwd = 2)
 
-magicaxis::magplot(rec$storage, rec$ks, pch = 20, col = get_palette('ocean'))
-
+# load('gr_1000.rds')
 sub <- rec
 subad <- sub[sub$turnover > 300 , ]
 subch <- sub[sub$turnover > 290 & sub$turnover < 300 , ]
@@ -376,6 +452,41 @@ pex_ks <- (fish(pf_ks^trap, t, 1)/sum(fish(pf_ks^trap,t,1)))
 
 
 
+fns_ks <- 0
+fns_kp <- 0
+for (i in 1:10) {
+  fns_kp <- c(fns_kp, fines_synth(.301, .04, 191))
+  fns_ks <- c(fns_ks, fines_synth(.222, .054, 208))
+}
+fns_kp <- fns_kp[-1]
+fns_ks <- fns_ks[-1]
+lines(emp_cdf(fns_kp))
+
+
+df_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_gr_kp.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_gr_ks.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/gravels_transits_ks.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/gravels_transits_kp.csv')
+gr_trans_kp <- data.table::fread('/home/erik/output/transits_cdf_gr_kp.csv')
+gr_trans_ch <- data.table::fread('/home/erik/output/transits_cdf_gr_ch.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_fn_ks.csv')
+gr_trans_kp <- data.table::fread('/home/erik/output/transits_cdf_fn_kp.csv')
+df_trans_ks <- data.table::fread('/home/erik/output/debris_flow_deposits_cdf.csv')
+
+
+png('fines_fit.png', height = 17, width = 21, units = 'cm', res = 300)
+magicaxis::magplot(emp_cdf(charcoal$mn[charcoal$facies == 'FF'] + 50), pch = 20, col = get_palette('coral'),
+                   xlab = 'Charcoal Age [y]', ylab = 'CDF of samples', xlim = c(0, 17000))
+points(emp_cdf(debris_flows), pch = 20, col = get_palette('hardwood'))
+points(emp_cdf(charcoal$mn[charcoal$facies == 'FG'] + 50), pch = 20, col = get_palette('charcoal'))
+
+lines(emp_cdf(fns_ks), lwd = 2.5, col = get_palette('crimson', .7))
+lines(emp_cdf(fns_kp), lwd = 2.5, col = get_palette('violet', .7))
+# lines(0:20000, cumsum(unlist(gr_trans_ch)), lwd = 2.5, col = get_palette('gold', .7))
+legend('bottomright', legend = c('Debris-Flows', 'Gravels', 'Fines', 'Kolmogorov-Smirnov', 'Kuiper'),
+       lty = c(NA, NA, NA, 1, 1), lwd = c(NA, NA, NA, 2, 2),
+       pch = c(20, 20, 20, NA, NA), col = get_palette(c('hardwood', 'charcoal', 'coral', 'crimson', 'violet'), .9))
+dev.off()
 
 
 

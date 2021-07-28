@@ -9,9 +9,7 @@ Description: Functions for convolving inherited ages from C14 bank stratigraphy 
 Depends: R (>= 3.4.4)
 Imports:
     data.table,
-    magrittr,
-    parallel,
-    staTools
+    magrittr
 Encoding: UTF-8
 License: CC0
 LazyData: true
@@ -19,5 +17,6 @@ RoxygenNote: 7.1.1
 Suggests: 
     knitr,
     rmarkdown,
-    testthat
+    testthat,
+    staTools
 VignetteBuilder: knitr

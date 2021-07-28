@@ -544,13 +544,28 @@ tp_ch <- 293
 tp_kp <- 191
 tp_ks <- 208
 
-t <- seq(0, 37, length.out = 4430)
-trap <- 2
-pex_t <- fish(1-fep, t, 1) / sum(fish(1-fep, t, 1))
-pex_ad <- (fish(pf_ad^trap, t, 1)/sum(fish(pf_ad^trap,t,1)))
-pex_ch <- (fish(pf_ch^trap, t, 1)/sum(fish(pf_ch^trap,t,1)))
-pex_kp <- (fish(pf_kp^trap, t, 1)/sum(fish(pf_kp^trap,t,1)))
-pex_ks <- (fish(pf_ks^trap, t, 1)/sum(fish(pf_ks^trap,t,1)))
+t <- seq(0, 50, length.out = 4430)
+pex_kp <- (fish(0.14, t, 1)/sum(fish(0.14, t, 1)))
+pex_ks <- (fish(0.13, t, 1)/sum(fish(0.13, t, 1)))
+
+fex_kp <- (fish(0.04, t, 1)/sum(fish(0.04, t, 1)))
+fex_ks <- (fish(0.054, t, 1)/sum(fish(0.054, t, 1)))
+
+png('fluvial_travel.png', height = 17, width = 21, units = 'cm', res = 300)
+magicaxis::magplot(t * tp_ks , cumsum(pex_ks), log = 'x',
+     xlab = 'Fluvial Travel Time [y]', xlim = c(100, 10000),
+     ylab = 'CDF',
+     type = 'l', lwd = 2.5, col = get_palette('crimson', .7))
+# lines(t*tp_ch, cumsum(pex_ks), lwd = 2.5, col = get_palette('gold', .7))
+lines(t * tp_kp , cumsum(pex_kp), lwd = 2.5, col = get_palette('violet', .7))
+# lines(t*tp_ks, cumsum(pex_ks), lwd = 2.5, col = get_palette('crimson', .7))
+lines(t * tp_kp , cumsum(fex_kp), lty = 2, lwd = 1.5, col = get_palette('violet', .7))
+lines(t * tp_ks , cumsum(fex_ks), lty = 2, lwd = 1.5, col = get_palette('crimson', .7))
+legend('topleft', legend = c('Gravels', 'Fines', 'Kuiper', 'Kolmogorov-Smirnov'),
+       col = get_palette(c('charcoal', 'charcoal', 'violet', 'crimson'), .9),
+       lty = c(1, 2, 1, 1))
+dev.off()
+
 
 library(magicaxis)
 
@@ -1693,9 +1708,14 @@ st_st[st_st[,1] > 4.68, 2]
 
 df_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_gr_kp.csv')
 gr_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_gr_ks.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/gravels_transits_ks.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/gravels_transits_kp.csv')
 gr_trans_kp <- data.table::fread('/home/erik/output/transits_cdf_gr_kp.csv')
 gr_trans_ch <- data.table::fread('/home/erik/output/transits_cdf_gr_ch.csv')
+gr_trans_ks <- data.table::fread('/home/erik/output/transits_cdf_fn_ks.csv')
+gr_trans_kp <- data.table::fread('/home/erik/output/transits_cdf_fn_kp.csv')
 df_trans_ks <- data.table::fread('/home/erik/output/debris_flow_deposits_cdf.csv')
+
 
 png('gravels_fit.png', height = 17, width = 21, units = 'cm', res = 300)
 magicaxis::magplot(emp_cdf(charcoal$mn[charcoal$facies == 'FF'] + 50), pch = 20, col = get_palette('coral'),
@@ -1705,7 +1725,7 @@ points(emp_cdf(charcoal$mn[charcoal$facies == 'FG'] + 50), pch = 20, col = get_p
 
 lines(0:20000, cumsum(unlist(gr_trans_ks)), lwd = 2.5, col = get_palette('crimson', .7))
 lines(0:20000, cumsum(unlist(gr_trans_kp)), lwd = 2.5, col = get_palette('violet', .7))
-lines(0:20000, cumsum(unlist(gr_trans_ch)), lwd = 2.5, col = get_palette('gold', .7))
+# lines(0:20000, cumsum(unlist(gr_trans_ch)), lwd = 2.5, col = get_palette('gold', .7))
 legend('bottomright', legend = c('Debris-Flows', 'Gravels', 'Fines', 'Kolmogorov-Smirnov', 'Kuiper'),
        lty = c(NA, NA, NA, 1, 1), lwd = c(NA, NA, NA, 2, 2),
        pch = c(20, 20, 20, NA, NA), col = get_palette(c('hardwood', 'charcoal', 'coral', 'crimson', 'violet'), .9))
@@ -1714,7 +1734,7 @@ dev.off()
 
 head(df_trans_ks)
 df_trans_ks[df_trans_ks < 0] <- 0
-write.csv(df_trans_ks, 'gravels_transits_ad.csv', row.names = F)
+write.csv(df_trans_ks, 'gravels_transits_kp.csv', row.names = F)
 
 
 
