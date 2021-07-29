@@ -8,7 +8,7 @@ test_fit(
   fits,
   ad_a = 340,
   ad_b = 280,
-  ch_a = 250,
+  ch_a = 200,
   ch_b = 150,
   kp_a = 0.12,
   kp_b = 0.09,

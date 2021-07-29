@@ -2,6 +2,7 @@ library(magrittr)
 library(parallel)
 options(mc.cores=parallel::detectCores())
 setwd('/media/erik/catacomb/research')
+setwd('/home/erik/output')
 
 debris_flows <- charcoal$mn[charcoal$facies == 'DF'] + 50
 gravels <- charcoal$mn[charcoal$facies == 'FG'] + 50
@@ -31,9 +32,9 @@ muddier::gravel_fit_n(10, .12, .12, 208, source_index = dfi, source_prob = dfp, 
 muddier::fines_fit_n(10, .12, .12, 208, source_index = dfi, source_prob = dfp, storage_index = storage_index,
                      gravel_index = gri, gravel_prob = grp, fines = fines)
 
-rec <- muddier::fluvial_fit(10, 200, 0, 1, 0, 1, 50, 10000, storage_index, dfi, dfp, gravels)
+rec <- muddier::fluvial_fit(10, 200, 0, 1, 0, 1, 50, 10000, storage_index, dfi, dfp, gri, grp, fines, fines = T)
 
-dur <- as.difftime(3, units = 'hours')
+dur <- as.difftime(50, units = 'hours')
 begin <- Sys.time()
 end <- begin + dur
 while (Sys.time() < end) {
@@ -49,9 +50,11 @@ while (Sys.time() < end) {
     storage_index = storage_index,
     source_index = dfi,
     source_prob = dfp,
-    obs = gravels,
+    gravel_index = gri,
+    gravel_prob = grp,
+    obs = fines,
     fines = F))
-  save(rec, file = 'fl_200.rds')
+  save(rec, file = 'fl_200f.rds')
 }
 
 
@@ -75,7 +78,7 @@ plot3D::points3D(rec$capture, rec$storage, rec$ks_a, ticktype = 'detailed', pch 
                  phi = 40, theta = 310,
                  xlab = 'capture rate', ylab = 'storage rate')
 
-magicaxis::magplot(rec$turnover, rec$ch_b, pch = 20, col = get_palette('ocean'),
+magicaxis::magplot(rec$turnover, rec$ks_a, pch = 20, col = get_palette('ocean'),
                    xlab = 'turnover period [y]', ylab = 'k-s fit')
 abline(v = 191, col = get_palette('violet', .9), lwd = 2)
 abline(v = 208, col = get_palette('crimson', .9), lwd = 2)

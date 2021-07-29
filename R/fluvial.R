@@ -128,12 +128,16 @@ gof <- function(synth, obs) {
 #' @return Vector of hit % = c(ad_a, ch_a, kp_a, ks_a, ad_b, ch_b, kp_b, ks_b)
 #' @export
 test_fit <- function(fits,
-                     ad_a = 340,
-                     ad_b = 280,
-                     ch_a = 200,
-                     ch_b = 150,
-                     kp_a = 0.12,
-                     kp_b = 0.09,
+                     # ad_a = 340,
+                     # ad_b = 280,
+                     ad_a = 240,
+                     ad_b = 180,
+                     # ch_a = 200,
+                     # ch_b = 150,
+                     ch_a = 1950,
+                     ch_b = 1700,
+                     kp_a = 0.14,
+                     kp_b = 0.10,
                      ks_a = 0.09,
                      ks_b = 0.05) {
   hits <- c(0,0,0,0, 0,0,0,0)
@@ -234,6 +238,8 @@ fines_fit_n <- function(n, capture, storage, turnover, storage_index,
 #' @param storage_index is the age value index for storage
 #' @param source_index is the age value index corresponding to the PMF source_prob
 #' @param source_prob is the PMF of debris-flow deposit ages
+#' @param gravel_index is the age value index corresponding to the PMF gravel_prob
+#' @param gravel_prob is the PMF of gravel ages
 #' @param obs The vector of observed deposit ages.
 #' @param fines Boolean indicating whether the observed deposits are fines.
 #' @return table of mean hit % of test thresholds, using test_fit()
@@ -246,16 +252,18 @@ fluvial_fit <- function(batch = 10, n = 10,
                        min_stor = 0, max_stor = 1,
                        min_turn = 50, max_turn = 10000,
                        storage_index, source_index, source_prob,
+                       gravel_index, gravel_prob,
                        obs, fines = F) {
   capture_rates <- runif(batch, min_cap, max_cap)
   storage_rates <- runif(batch, min_stor, max_stor)
   turnovers <- runif(batch, min_turn, max_turn)
   mat <- 0
   if (fines) {
-    mat <- t(parallel::mcmapply(function(a,b,c,d,e,f,g,h) fines_fit_n(a, b, c, d, e, f, g, h),
+    mat <- t(parallel::mcmapply(function(a,b,c,d,e,f,g,h,i,j) fines_fit_n(a, b, c, d, e, f, g, h, i, j),
                                 b = capture_rates, c = storage_rates, d = turnovers,
                                 MoreArgs = list(a = n, e = storage_index, f = source_index,
-                                                g = source_prob, h = obs)))
+                                                g = source_prob, h = gravel_index,
+                                                i = gravel_prob, j = obs)))
   } else {
     mat <- t(parallel::mcmapply(function(a,b,c,d,e,f,g,h) gravel_fit_n(a, b, c, d, e, f, g, h),
                                 b = capture_rates, c = storage_rates, d = turnovers,

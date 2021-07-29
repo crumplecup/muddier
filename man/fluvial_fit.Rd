@@ -16,6 +16,9 @@ fluvial_fit(
   storage_index,
   source_index,
   source_prob,
+  gravel_index,
+  gravel_prob,
+  obs,
   fines = F
 )
 }
@@ -42,7 +45,13 @@ fluvial_fit(
 
 \item{source_prob}{is the PMF of debris-flow deposit ages}
 
-\item{fines}{A vector of observed gravel ages.}
+\item{gravel_index}{is the age value index corresponding to the PMF gravel_prob}
+
+\item{gravel_prob}{is the PMF of gravel ages}
+
+\item{obs}{The vector of observed deposit ages.}
+
+\item{fines}{Boolean indicating whether the observed deposits are fines.}
 }
 \value{
 table of mean hit % of test thresholds, using test_fit()
