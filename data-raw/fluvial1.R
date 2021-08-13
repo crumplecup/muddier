@@ -945,12 +945,19 @@ d$rw[d$rw > 1] <- 1 - (d$rw[d$rw > 1] - 1) / (max(d$rw) - 1)
 plot(ds$b, ds$rw, log = 'x')
 
 png('scale_weight.png', height = 17, width = 21, units = 'cm', res = 300)
-plot(d$b, d$rw, log = 'x', pch = 20, col = get_palette('ocean'),
-     xlab = 'b-axis widtth [mm]',
-     ylab = 'scale weight')
+magicaxis::magplot(d$b, d$rw, log = 'x', pch = 20, col = get_palette('ocean'),
+     xlab = 'b-axis Width [mm]',
+     ylab = 'Scale Weight')
 points(ds$b, ds$rw, pch = 20, col = get_palette('crimson'))
-legend('topright', legend = c('surface', 'subsurface'),
-       fill = get_palette(c('ocean', 'crimson'), .77))
+abline(v = median(d$b), col = get_palette('ocean', .7), lty = 2)
+abline(v = median(ds$b), col = get_palette('crimson', .7), lty = 2)
+legend('topright', legend = c('Surface', 'Subsurface', 'Median'),
+       lty = c(NA, NA, 2), pch = c(20, 20, NA),
+       col = get_palette(c('ocean', 'crimson', 'charcoal'), .77))
+text(4.5, 0.05, labels = paste0(round(median(ds$b), 2), ' mm'),
+     col = get_palette('crimson', .9))
+text(30, 0.05, labels = paste0(round(median(d$b), 2), ' mm'),
+     col = get_palette('ocean', .9))
 dev.off()
 
 dx <- data.frame(b = 1:500)

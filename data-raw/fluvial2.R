@@ -544,26 +544,39 @@ tp_ch <- 293
 tp_kp <- 191
 tp_ks <- 208
 
-t <- seq(0, 50, length.out = 4430)
-pex_kp <- (fish(0.14, t, 1)/sum(fish(0.14, t, 1)))
-pex_ks <- (fish(0.13, t, 1)/sum(fish(0.13, t, 1)))
+sfill / tp_ad / 1416 * 0.128
+sfill / tp_ch / 1515 * 0.137
+sfill / tp_kp / 2864 * 0.259
+sfill / tp_ks / 2109 * 0.191
 
-fex_kp <- (fish(0.04, t, 1)/sum(fish(0.04, t, 1)))
-fex_ks <- (fish(0.054, t, 1)/sum(fish(0.054, t, 1)))
+
+t <- seq(0, 100, length.out = 4430)
+pex_ad <- (fish(0.058, t, 1)/sum(fish(0.058, t, 1)))
+pex_ch <- (fish(0.136, t, 1)/sum(fish(0.136, t, 1)))
+pex_kp <- (fish(0.011, t, 1)/sum(fish(0.011, t, 1)))
+pex_ks <- (fish(0.106, t, 1)/sum(fish(0.106, t, 1)))
+
+fex_ad <- (fish(0.108, t, 1)/sum(fish(0.108, t, 1)))
+fex_ch <- (fish(0.075, t, 1)/sum(fish(0.075, t, 1)))
+fex_kp <- (fish(0.075, t, 1)/sum(fish(0.075, t, 1)))
+fex_ks <- (fish(0.425, t, 1)/sum(fish(0.425, t, 1)))
+
 
 png('fluvial_travel.png', height = 17, width = 21, units = 'cm', res = 300)
 magicaxis::magplot(t * tp_ks , cumsum(pex_ks), log = 'x',
-     xlab = 'Fluvial Travel Time [y]', xlim = c(100, 10000),
+     xlab = 'Fluvial Travel Time [y]', xlim = c(50, 35000),
      ylab = 'CDF',
      type = 'l', lwd = 2.5, col = get_palette('crimson', .7))
-# lines(t*tp_ch, cumsum(pex_ks), lwd = 2.5, col = get_palette('gold', .7))
+lines(t*tp_ch, cumsum(pex_ch), lwd = 2.5, col = get_palette('gold', .7))
 lines(t * tp_kp , cumsum(pex_kp), lwd = 2.5, col = get_palette('violet', .7))
-# lines(t*tp_ks, cumsum(pex_ks), lwd = 2.5, col = get_palette('crimson', .7))
+lines(t*tp_ad, cumsum(pex_ad), lwd = 2.5, col = get_palette('ocean', .7))
+lines(t * tp_ad , cumsum(fex_ad), lty = 2, lwd = 1.5, col = get_palette('ocean', .7))
+lines(t * tp_ch , cumsum(fex_ch), lty = 2, lwd = 1.5, col = get_palette('gold', .7))
 lines(t * tp_kp , cumsum(fex_kp), lty = 2, lwd = 1.5, col = get_palette('violet', .7))
 lines(t * tp_ks , cumsum(fex_ks), lty = 2, lwd = 1.5, col = get_palette('crimson', .7))
-legend('topleft', legend = c('Gravels', 'Fines', 'Kuiper', 'Kolmogorov-Smirnov'),
-       col = get_palette(c('charcoal', 'charcoal', 'violet', 'crimson'), .9),
-       lty = c(1, 2, 1, 1))
+legend('topleft', legend = c('Gravels', 'Fines', 'Anderson-Darling', 'Chi-squared', 'Kuiper', 'Kolmogorov-Smirnov'),
+       col = get_palette(c('charcoal', 'charcoal', 'ocean', 'gold', 'violet', 'crimson'), .9),
+       lty = c(1, 2, 1, 1, 1, 1))
 dev.off()
 
 

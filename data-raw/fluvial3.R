@@ -173,23 +173,22 @@ bin_dual_stat <- function(pred1, pred2, fit, bins = 10) {
   # divide range of pred into bins number of steps
   rng1 <- seq(min(pred1), max(pred1), (max(pred1) - min(pred1)) / bins)
   rng2 <- seq(min(pred2), max(pred2), (max(pred2) - min(pred2)) / bins)
-  for (i in 1:bins) {
-    if (i == 1) {
-      bin <- fit[pred1 <= rng1[i]]
-    } else {
-      bin <- fit[pred1 > rng1[i-1] & pred1 <= rng1 [i]]
-    }
-    for (j in 1:bins) {
-      if (j == 1) {
-        jbin <- bin[pred2 <= rng2[j]]
+  for (i in 1:(bins-1)) {
+    for (j in 1:(bins-1)) {
+      bin <- fit[pred1 > rng1[i] & pred1 <= rng1[i+1]
+                 & pred2 > rng2[j] & pred2 <= rng2[j+1]]
+
+      if (length(bin) > 1) {
+        mns <- c(mns, mean(bin))
+        sds <- c(sds, sd(bin))
+        ns <- c(ns, length(bin))
       } else {
-        jbin <- bin[pred2 > rng2[j-1] & pred2 <= rng2[j]]
+        mns <- c(mns, NA)
+        sds <- c(sds, NA)
+        ns <- c(ns, NA)
       }
-      mns <- c(mns, mean(jbin[!is.na(jbin)]))
-      sds <- c(sds, sd(jbin[!is.na(jbin)]))
-      ns <- c(ns, length(jbin[!is.na(jbin)]))
-      idx1 <- c(idx1, rng1[i])
-      idx2 <- c(idx2, rng2[j])
+      idx1 <- c(idx1, (rng1[i] + rng1[i+1]) / 2)
+      idx2 <- c(idx2, (rng2[j] + rng2[j+1]) / 2)
     }
   }
   mns <- mns[-1]
